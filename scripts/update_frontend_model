@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+printf Enter user:\  && read user
+mysql -h localhost -u "$user" --password < "${SCRIPT_DIR}/frontend_model.sql"
