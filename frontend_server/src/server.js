@@ -3,9 +3,11 @@ const url = require('url');
 const fs = require('fs');
 const ejs = require('ejs');
 const util = require('util');
-const routes = require('./routes')
-const Router = require('./router')
-const mime = require('mime-types')
+const routes = require('./routes');
+const Router = require('./router');
+const mime = require('mime-types');
+const connector = require('./db/connector');
+const config = require('./config')
 
 class Server
 {
@@ -14,10 +16,12 @@ class Server
         this.readFileAsync = util.promisify(fs.readFile);
     }
 
-    start(port)
+    async start()
     {
+        this.config = await config.readConfig('config.json');
+        this.connector = new connector.Connector(this.config);
         this.createServer({
-            "port": port,
+            "port": config.port,
             "routes": routes
         });
     }
@@ -79,4 +83,4 @@ class Server
 }
 
 const server = new Server();
-server.start(8080);
+server.start();

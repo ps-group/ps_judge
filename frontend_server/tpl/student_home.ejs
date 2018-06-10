@@ -1,0 +1,8 @@
+<%- include('layout/head', {title: 'Задачи'}) %>
+<h2>Список заданий</h2>
+<ol>
+<% for (let assignment of page.assignments) { %>
+  <li><%= assignment.title %></li>
+<% } %>
+</ol>
+<%- include('layout/tail') %>
