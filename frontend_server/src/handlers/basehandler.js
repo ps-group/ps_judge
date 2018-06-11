@@ -36,8 +36,8 @@ class BaseHandler
      */
     async _redirect(url, response)
     {
-        res.writeHead(301, { 'Location': url });
-        res.end();
+        response.writeHead(301, { 'Location': url });
+        response.end();
     }
 
     /**
