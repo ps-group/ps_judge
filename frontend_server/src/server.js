@@ -1,13 +1,18 @@
+const connect = require('connect');
+const compression = require('compression');
+const cookieSession = require('cookie-session')
+const serveStatic = require('serve-static')
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
-const ejs = require('ejs');
 const util = require('util');
 const routes = require('./routes');
 const Router = require('./router');
 const mime = require('mime-types');
-const connector = require('./db/connector');
+const appcontext = require('./appcontext');
 const config = require('./config')
+
+const SESSION_SECRET = '7pv0OvUy';
 
 class Server
 {
@@ -19,22 +24,46 @@ class Server
     async start()
     {
         this.config = await config.readConfig('config.json');
-        this.connector = new connector.Connector(this.config);
+        this.context = new appcontext.AppContext(this.config);
         this.createServer({
-            "port": config.port,
-            "routes": routes
+            "port": this.config.port,
+            "routes": routes.ROUTES
         });
     }
 
     createServer(options)
     {
         this.router = new Router(options.routes);
-        http.createServer((request, response) => {
-            this.handle(request, response)
-        }).listen(options.port);
+
+        // gzip/deflate outgoing responses
+        this.app = connect();
+        this.app.use(compression());
+
+        // store session state in browser cookie
+        // TODO: store session data in Redis
+        this.app.use(cookieSession({
+            secret: 'SESSION_SECRET'
+        }));
+
+        // parse urlencoded request bodies into req.body
+        const bodyParser = require('body-parser');
+        this.app.use(bodyParser.urlencoded({extended: false}));
+
+        // respond to all requests with application-specific handlers
+        this.app.use((request, response, next) => {
+            this.handleCustom(request, response, next)
+        });
+
+        // serve static files
+        this.app.use(serveStatic('./www/', {
+            'dotfiles': 'ignore',
+        }));
+
+        console.log('starting on http://localhost:' + options.port + '/');
+        http.createServer(this.app).listen(options.port);
     }
 
-    handle(request, response)
+    handleCustom(request, response, next)
     {
         const path = url.parse(request.url).pathname;
         const route = this.router.find(path);
@@ -44,7 +73,7 @@ class Server
         }
         else
         {
-            this.handleStatic(path, response);
+            next();
         }
     }
 
@@ -52,32 +81,15 @@ class Server
     {
         try
         {
-            const handler = require('./handlers/' + route.handler);
-            await handler[route.action](request, response);
+            const handlerClass = require('./handlers/' + route.handler);
+            const hanler = new handlerClass(this.context);
+            await hanler[route.action](request, response);
         }
         catch (err)
         {
             console.error('internal error: ', err);
             response.writeHead(500);
             response.end();
-        }
-    }
-
-    async handleStatic(path, response)
-    {
-        try
-        {
-            const staticPath = './www/' + path
-            const contentType = mime.lookup(staticPath) || 'application/octet-stream';
-            response.writeHead(200, {'Content-Type': contentType});
-            const data = await this.readFileAsync(staticPath);
-            response.write(data);
-            response.end();
-        }
-        catch (err)
-        {
-            response.writeHead(404, {'Content-Type': 'text/html'});
-            response.end("404 Not Found");
         }
     }
 }

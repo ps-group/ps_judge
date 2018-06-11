@@ -6,11 +6,12 @@ class Config
     constructor(jsonObject)
     {
         const dbAuth = jsonObject["db_auth"];
-
         this.dbName = jsonObject["db_name"];
         this.dbHost = dbAuth["host"];
         this.dbUser = dbAuth["user"];
         this.dbPassword = dbAuth["password"];
+
+        this.port = jsonObject["port"];
     }
 }
 

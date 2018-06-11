@@ -1,10 +1,15 @@
 
-module.exports = {
+module.exports.LOGIN_URL = '/login';
+module.exports.ADMIN_HOME_URL = '/admin';
+module.exports.STUDENT_HOME_URL = '/student';
+module.exports.JUDGE_HOME_URL = '/judge';
+
+module.exports.ROUTES = {
     "/": {
         "handler": "main",
         "action": "index"
     },
-    "/student": {
+    STUDENT_HOME_URL: {
         "handler": "student",
         "action": "home"
     },

@@ -3,6 +3,7 @@ const connector = require('./connector.js')
 const ROLE_ADMIN = 'admin';
 const ROLE_STUDENT = 'student';
 const ROLE_JUDGE = 'judge';
+const assert = require('assert');
 
 /**
  * This repository class can access frontend server database.
@@ -15,6 +16,7 @@ class FrontendRepository
      */
     constructor(connector)
     {
+        assert(connector !== undefined);
         this.connector = connector;
     }
 
@@ -98,4 +100,39 @@ class FrontendRepository
         const score = 0;
         await this.connector.query(sql, [commitId, reviewerId, score]);
     }
+
+    /**
+     * Returns info from contest with given id.
+     * @param {number} contestId - database id of the programming contest
+     */
+    async getContestInfo(contestId)
+    {
+        const sql = 'SELECT id FROM contest WHERE contest_id = ?';
+        return await this.connector.query(sql, [contestId]);
+    }
+
+    /**
+     * Retuns assignments attached to given contest.
+     * @param {number} contestId - database id of the programming context
+     */
+    async getAssignments(contestId)
+    {
+        const sql = 'SELECT (id, title) FROM assignment WHERE contest_id = ?';
+        return await this.connector.query(sql, [contestId]);
+    }
+
+    /**
+     * Returns id, password, contest_id and role for user with given usernam
+     * @param {string} username - username used to search
+     */
+    async getUserAuthInfo(username)
+    {
+        const sql = 'SELECT (id, password, active_contest_id, roles) FROM user WHERE username = ?';
+        return await this.connector.query(sql, [username]);
+    }
 }
+
+module.exports.ROLE_ADMIN = ROLE_ADMIN;
+module.exports.ROLE_STUDENT = ROLE_STUDENT;
+module.exports.ROLE_JUDGE = ROLE_JUDGE;
+module.exports.FrontendRepository = FrontendRepository;

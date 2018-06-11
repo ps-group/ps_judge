@@ -15,8 +15,8 @@ class Connector
             password: conf.dbPassword,
             database: conf.dbName
         });
-        this.connectImpl = await util.promisify(this.connector.connect);
-        this.queryImpl = await util.promisify(this.connector.query);
+        this.connectImpl = util.promisify(this.connector.connect);
+        this.queryImpl = util.promisify(this.connector.query);
     }
 
     async connect()
