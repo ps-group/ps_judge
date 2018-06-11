@@ -2,6 +2,7 @@ const util = require('util');
 const ejs = require('ejs');
 const routes = require('../routes');
 const appsession = require('../data/appsession');
+const assert = require('assert');
 
 const renderFileAsync = util.promisify(ejs.renderFile);
 
@@ -23,6 +24,9 @@ class BaseHandler
      */
     async _render(tplPath, data, response)
     {
+        assert(data !== undefined);
+        assert(response !== undefined);
+
         const html = await renderFileAsync(tplPath, data);
         response.writeHead(200, {'Content-Type': 'text/html'});
         response.write(html);
@@ -50,11 +54,9 @@ class BaseHandler
         const session = new appsession.AppSession(request);
         if (!session.authorized)
         {
-            console.log('redirect to ', routes.LOGIN_URL);
             this._redirect(routes.LOGIN_URL, response);
             return false;
         }
-        console.log('session.authorized =', session.authorized);
         return true;
     }
 }

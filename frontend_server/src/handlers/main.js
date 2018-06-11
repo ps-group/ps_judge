@@ -37,6 +37,11 @@ class Main extends basehandler.BaseHandler
             throw new Error('user has incorrect roles: ' + info.roles);
         }
     }
+
+    async login(request, response)
+    {
+        this._render('./tpl/login.ejs', {}, response);
+    }
 }
 
 module.exports = Main;
