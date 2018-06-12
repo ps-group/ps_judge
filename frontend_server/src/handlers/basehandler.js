@@ -40,8 +40,19 @@ class BaseHandler
      */
     async _redirect(url, response)
     {
-        response.writeHead(301, { 'Location': url });
+        response.writeHead(301, { 'Location': url, 'Cache-Control': 'no-store' });
         response.end();
+    }
+
+    /**
+     * Returns true if user authorized
+     * @param {*} request - client request object
+     * @param {*} response - server response object
+     */
+    _hasAuth(request)
+    {
+        this._initSession(request);
+        return this._session.authorized;
     }
 
     /**
@@ -49,15 +60,38 @@ class BaseHandler
      * @param {*} request - client request object
      * @param {*} response - server response object
      */
-    _checkAuth(request, response, next)
+    _checkAuth(request, response)
     {
-        const session = new appsession.AppSession(request);
-        if (!session.authorized)
+        if (!this._hasAuth(request))
         {
             this._redirect(routes.LOGIN_URL, response);
             return false;
         }
         return true;
+    }
+
+    /**
+     * Initializes user session lazily
+     */
+    _initSession(request)
+    {
+        if (!this._session)
+        {
+            this._session = new appsession.AppSession(request);
+        }
+        assert(this._session);
+    }
+
+    /**
+     * Initializes repository lazily.
+     */
+    _initRepository()
+    {
+        if (!this._repository)
+        {
+            this._repository = this._context.connectDB();
+        }
+        assert(this._repository);
     }
 }
 

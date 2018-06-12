@@ -117,7 +117,7 @@ class FrontendRepository
      */
     async getAssignments(contestId)
     {
-        const sql = 'SELECT (id, title) FROM assignment WHERE contest_id = ?';
+        const sql = 'SELECT id, title FROM assignment WHERE contest_id = ?';
         return await this.connector.query(sql, [contestId]);
     }
 
@@ -127,7 +127,7 @@ class FrontendRepository
      */
     async getUserAuthInfo(username)
     {
-        const sql = 'SELECT (id, password, active_contest_id, roles) FROM user WHERE username = ?';
+        const sql = 'SELECT id, password, active_contest_id, roles FROM user WHERE username=?';
         return await this.connector.query(sql, [username]);
     }
 }

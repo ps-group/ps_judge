@@ -1,7 +1,8 @@
 const connect = require('connect');
 const compression = require('compression');
-const cookieSession = require('cookie-session')
-const serveStatic = require('serve-static')
+const cookieSession = require('cookie-session');
+const serveStatic = require('serve-static');
+const bodyParser = require('body-parser');
 const http = require('http');
 const url = require('url');
 const fs = require('fs');
@@ -46,7 +47,6 @@ class Server
         }));
 
         // parse urlencoded request bodies into req.body
-        const bodyParser = require('body-parser');
         this.app.use(bodyParser.urlencoded({extended: false}));
 
         // respond to all requests with application-specific handlers

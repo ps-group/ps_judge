@@ -1,9 +1,11 @@
 const util = require('util');
 const ejs = require('ejs');
+const assert = require('assert');
 const basehandler = require('./basehandler');
 const repository = require('../data/repository');
 const appsession = require('../data/appsession');
 const routes = require('../routes');
+const password = require('../data/password');
 
 class Main extends basehandler.BaseHandler
 {
@@ -19,28 +21,71 @@ class Main extends basehandler.BaseHandler
     {
         if (this._checkAuth(request, response))
         {
-            const repo = this._context.connectDB();
-            const session = new appsession.AppSession(request);
-            const info = repo.getUserAuthInfo(session.username);
-            if (info.roles.contains(repository.ROLE_ADMIN))
-            {
-                this._redirect(routes.ADMIN_HOME_URL)
-            }
-            else if (info.roles.contains(repository.ROLE_JUDGE))
-            {
-                this._redirect(routes.JUDGE_HOME_URL)
-            }
-            else if (info.roles.contains(repository.ROLE_STUDENT))
-            {
-                this._redirect(routes.STUDENT_HOME_URL)
-            }
-            throw new Error('user has incorrect roles: ' + info.roles);
+            this._redirectAuthorized(request, response);
         }
     }
 
     async login(request, response)
     {
-        this._render('./tpl/login.ejs', {}, response);
+        if (request.method != 'POST')
+        {
+            if (this._hasAuth(request, response))
+            {
+                this._redirectAuthorized(request, response);
+            }
+            else
+            {
+                this._render('./tpl/login.ejs', { loginFailed: false }, response);
+            }
+        }
+        else
+        {
+            const username = request.body['username'];
+            const rawPassword = request.body['password'];
+            const passwordHash = password.hashPassword(rawPassword);
+
+            // TODO: do not compare with rawPassword - it's unsafe.
+            this._initRepository();
+            const infos = await this._repository.getUserAuthInfo(username);
+            if (infos.length == 1 && (infos[0]['password'] == rawPassword || infos[0]['password'] == passwordHash))
+            {
+                console.log('BEFORE: request.session=', request.session);
+                this._initSession(request);
+                this._session.authorized = true;
+                this._session.username = username;
+                console.log('AFTER: request.session=', request.session);
+                this._redirectAuthorized(request, response);
+            }
+            else
+            {
+                this._render('./tpl/login.ejs', { loginFailed: true }, response);
+            }
+        }
+    }
+
+    async _redirectAuthorized(request, response)
+    {
+        this._initSession(request);
+        this._initRepository();
+
+        const infos = await this._repository.getUserAuthInfo(this._session.username);
+        const roles = '' + infos[0]['roles'];
+        if (roles.indexOf(repository.ROLE_ADMIN) >= 0)
+        {
+            this._redirect(routes.ADMIN_HOME_URL, response);
+        }
+        else if (roles.indexOf(repository.ROLE_JUDGE) >= 0)
+        {
+            this._redirect(routes.JUDGE_HOME_URL, response);
+        }
+        else if (roles.indexOf(repository.ROLE_STUDENT) >= 0)
+        {
+            this._redirect(routes.STUDENT_HOME_URL, response);
+        }
+        else
+        {
+            throw new Error('user has incorrect roles: ' + roles);
+        }
     }
 }
 

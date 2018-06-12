@@ -1,5 +1,6 @@
 const mysql = require('mysql');
 const util = require('util');
+const assert = require('assert');
 
 class Connector
 {
@@ -15,13 +16,13 @@ class Connector
             password: conf.dbPassword,
             database: conf.dbName
         });
-        this.connectImpl = util.promisify(this.connector.connect);
-        this.queryImpl = util.promisify(this.connector.query);
     }
 
     async connect()
     {
-        return this.connectImpl();
+        return util.promisify((cb) => {
+            this.connector.connect(cb);
+        })();
     }
 
     /**
@@ -31,7 +32,11 @@ class Connector
      */
     async query(sql, values)
     {
-        return this.queryImpl();
+        assert(sql !== undefined);
+        assert(values !== undefined);
+        return util.promisify((cb) => {
+            return this.connector.query(sql, values, cb);
+        })();
     }
 }
 

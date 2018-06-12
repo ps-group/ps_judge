@@ -12,6 +12,10 @@ ROUTES[LOGIN_URL] = {
     "handler": "main",
     "action": "login"
 };
+ROUTES['/login/send'] = {
+    "handler": "main",
+    "action": "loginSend"
+};
 ROUTES[STUDENT_HOME_URL] = {
     "handler": "student",
     "action": "home"

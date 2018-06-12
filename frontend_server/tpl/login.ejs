@@ -8,19 +8,22 @@
           <div class="card">
             <div class="card-body">
               <h2 class="card-title">Вход в систему</h2>
-              <form id="login-form" action="/action_page.php">
+              <form id="login-form" action="/login" method="post">
                 <div class="input-group mb-3">
                   <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon1">Username:</span>
                   </div>
-                  <input type="text" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
+                  <input type="text" name="username" class="form-control" aria-label="Username" aria-describedby="basic-addon1">
                 </div>
                 <div class="input-group mb-3">
                   <div class="input-group-prepend">
                     <span class="input-group-text" id="basic-addon1">Password:</span>
                   </div>
-                  <input type="password" class="form-control" aria-label="Password" aria-describedby="basic-addon1">
+                  <input type="password" name="password" class="form-control" aria-label="Password" aria-describedby="basic-addon1">
                 </div>
+                <% if (loginFailed) { %>
+                <div class="error text-danger">Ошибка: неправильный логин или пароль</div>
+                <% } %>
                 <button type="submit" class="btn btn-default">Войти</button>
               </form>
             </div>
