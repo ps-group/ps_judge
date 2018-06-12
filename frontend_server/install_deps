@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-sudo npm install -g mysql ejs serve-static connect compression cookie-session body-parser
+sudo npm install -g mysql ejs serve-static connect compression cookie-session body-parser showdown
