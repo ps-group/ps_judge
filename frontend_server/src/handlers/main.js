@@ -21,7 +21,7 @@ class Main extends basehandler.BaseHandler
     {
         if (this._checkAuth(request, response))
         {
-            this._redirectAuthorized(request, response);
+            return this._redirectAuthorized(request, response);
         }
     }
 
@@ -35,7 +35,7 @@ class Main extends basehandler.BaseHandler
             }
             else
             {
-                this._render('./tpl/login.ejs', { loginFailed: false }, response);
+                return this._render('./tpl/login.ejs', { loginFailed: false }, response);
             }
         }
         else
@@ -46,19 +46,19 @@ class Main extends basehandler.BaseHandler
 
             // TODO: do not compare with rawPassword - it's unsafe.
             this._initRepository();
-            const infos = await this._repository.getUserAuthInfo(username);
-            if (infos.length == 1 && (infos[0]['password'] == rawPassword || infos[0]['password'] == passwordHash))
+            const info = await this._repository.getUserAuthInfo(username);
+            if (info != null && (info['password'] == rawPassword || info['password'] == passwordHash))
             {
                 console.log('BEFORE: request.session=', request.session);
                 this._initSession(request);
                 this._session.authorized = true;
                 this._session.username = username;
                 console.log('AFTER: request.session=', request.session);
-                this._redirectAuthorized(request, response);
+                return this._redirectAuthorized(request, response);
             }
             else
             {
-                this._render('./tpl/login.ejs', { loginFailed: true }, response);
+                return this._render('./tpl/login.ejs', { loginFailed: true }, response);
             }
         }
     }
@@ -68,19 +68,19 @@ class Main extends basehandler.BaseHandler
         this._initSession(request);
         this._initRepository();
 
-        const infos = await this._repository.getUserAuthInfo(this._session.username);
-        const roles = '' + infos[0]['roles'];
+        const info = await this._repository.getUserAuthInfo(this._session.username);
+        const roles = '' + info['roles'];
         if (roles.indexOf(repository.ROLE_ADMIN) >= 0)
         {
-            this._redirect(routes.ADMIN_HOME_URL, response);
+            return this._redirect(routes.ADMIN_HOME_URL, response);
         }
         else if (roles.indexOf(repository.ROLE_JUDGE) >= 0)
         {
-            this._redirect(routes.JUDGE_HOME_URL, response);
+            return this._redirect(routes.JUDGE_HOME_URL, response);
         }
         else if (roles.indexOf(repository.ROLE_STUDENT) >= 0)
         {
-            this._redirect(routes.STUDENT_HOME_URL, response);
+            return this._redirect(routes.STUDENT_HOME_URL, response);
         }
         else
         {

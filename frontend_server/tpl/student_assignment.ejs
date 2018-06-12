@@ -1,11 +1,19 @@
 <%- include('layout/head', {title: page.title}) %>
-<article>
-  <%= page.assignment_info %>
-</article>
-<form id="commit_form" action="/action_page.php">
-<div class="form-group">
-  <textarea form ="commit_form" name="source" cols="35" wrap="soft"></textarea>
+<div class="container">
+  <article>
+    <h1><%= page.title %></h1>
+    <%- page.assignment_info %>
+  </article>
+  <h2>Отправка решения на проверку</h2>
+  <form action="/student/commit" method="post">
+    <input type="hidden" name="assignmentId" value="<%= page.assignment_id %>">
+    <div class="alert alert-info" role="alert">
+      <span>Как только составите решение, скопируйте его исходный код и нажмите "Отправить"</span>
+    </div>
+    <div class="form-group">
+      <textarea class="text-monospace" name="source" cols="60" rows="10" wrap="soft"></textarea>
+    </div>
+    <button type="submit" class="btn btn-default btn-primary">Отправить</button>
+  </form>
 </div>
-<button type="submit" class="btn btn-default">Отправить</button>
-</form>
 <%- include('layout/tail') %>

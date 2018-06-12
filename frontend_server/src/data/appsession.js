@@ -1,3 +1,5 @@
+
+// TODO: remove this class - it's previosly used only for validation.
 class AppSession
 {
     constructor(request)

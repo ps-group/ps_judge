@@ -107,7 +107,7 @@ class FrontendRepository
      */
     async getContestInfo(contestId)
     {
-        const sql = 'SELECT id FROM contest WHERE contest_id = ?';
+        const sql = 'SELECT title, start_time, end_time FROM contest WHERE id = ?';
         return await this.connector.query(sql, [contestId]);
     }
 
@@ -115,10 +115,25 @@ class FrontendRepository
      * Retuns assignments attached to given contest.
      * @param {number} contestId - database id of the programming context
      */
-    async getAssignments(contestId)
+    async getAssignmentsBriefInfo(contestId)
     {
         const sql = 'SELECT id, title FROM assignment WHERE contest_id = ?';
         return await this.connector.query(sql, [contestId]);
+    }
+
+    /**
+     * Return full information about assignment.
+     * @param {*} assignmentId - database id of the assignment
+     */
+    async getAssignmentInfo(assignmentId)
+    {
+        const sql = 'SELECT id, title, article FROM assignment WHERE id = ?';
+        const infos = await this.connector.query(sql, [assignmentId]);
+        if (infos.length == 0)
+        {
+            return null;
+        }
+        return infos[0];
     }
 
     /**
@@ -128,7 +143,30 @@ class FrontendRepository
     async getUserAuthInfo(username)
     {
         const sql = 'SELECT id, password, active_contest_id, roles FROM user WHERE username=?';
-        return await this.connector.query(sql, [username]);
+        const infos = await this.connector.query(sql, [username]);
+        if (infos.length == 0)
+        {
+            return null;
+        }
+        assert(infos.length == 1);
+        return infos[0];
+    }
+
+    /**
+     * Returns solution information
+     * @param {number} userId - user which made solution
+     * @param {number} assignmentId - solution target assignment
+     */
+    async getSolutionInfo(userId, assignmentId)
+    {
+        const sql = 'SELECT id, score FROM solution WHERE user_id=? AND assignment_id=?';
+        const infos = await this.connector.query(sql, [userId, assignmentId]);
+        if (infos.length == 0)
+        {
+            return null;
+        }
+        assert(infos.length == 1);
+        return infos[0];
     }
 }
 

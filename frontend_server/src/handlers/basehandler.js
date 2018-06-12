@@ -14,6 +14,14 @@ class BaseHandler
     constructor(context)
     {
         this._context = context;
+        /**
+         * @property {repository.FrontendRepository}
+         */
+        this._repository = null;
+        /**
+         * @property {appsession.AppSession}
+         */
+        this._session = null;
     }
 
     /**
@@ -64,7 +72,7 @@ class BaseHandler
     {
         if (!this._hasAuth(request))
         {
-            this._redirect(routes.LOGIN_URL, response);
+            return this._redirect(routes.LOGIN_URL, response);
             return false;
         }
         return true;

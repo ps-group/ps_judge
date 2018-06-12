@@ -1,8 +1,10 @@
 <%- include('layout/head', {title: 'Задачи'}) %>
-<h2>Список заданий</h2>
-<ol>
-<% for (let assignment of page.assignments) { %>
-  <li><%= assignment.title %></li>
-<% } %>
-</ol>
+<div class="container">
+  <h2>Список заданий</h2>
+  <ol>
+  <% for (let assignment of page.assignments) { %>
+    <li><a href='/student/assignment?id=<%= assignment.id %>'><%= assignment.title %></a></li>
+  <% } %>
+  </ol>
+</div>
 <%- include('layout/tail') %>
