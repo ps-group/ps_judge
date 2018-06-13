@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -e
 
+echo Installing frontend_service NodeJS dependencies
 sudo npm install -g mysql ejs serve-static connect compression cookie-session body-parser showdown uuid
