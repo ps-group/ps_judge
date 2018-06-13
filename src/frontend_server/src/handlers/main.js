@@ -49,11 +49,9 @@ class Main extends basehandler.BaseHandler
             const info = await this._repository.getUserAuthInfo(username);
             if (info != null && (info['password'] == rawPassword || info['password'] == passwordHash))
             {
-                console.log('BEFORE: request.session=', request.session);
                 this._initSession(request);
                 this._session.authorized = true;
                 this._session.username = username;
-                console.log('AFTER: request.session=', request.session);
                 return this._redirectAuthorized(request, response);
             }
             else
