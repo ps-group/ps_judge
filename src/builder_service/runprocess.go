@@ -141,7 +141,7 @@ func checkSolution(executablePath string, cases []testCase, workdir string) []er
 	return errors
 }
 
-type buildResult struct {
+type BuildResult struct {
 	internalError  error
 	buildError     error
 	testCaseErrors []error
@@ -157,32 +157,31 @@ func getLanguageExt(language language) string {
 	return ".unknown"
 }
 
-func buildSolution(sourceCode string, language language, cases []testCase, workdir string) buildResult {
-	// TODO: generate executable path
+func buildSolution(sourceCode string, language language, cases []testCase, workdir string) BuildResult {
 	srcPath := filepath.Join(workdir, "solution"+getLanguageExt(language))
 	exePath := filepath.Join(workdir, "solution")
 	runWorkdir := filepath.Join(workdir, "run")
 	err := os.MkdirAll(runWorkdir, 0)
 	if err != nil {
-		return buildResult{
+		return BuildResult{
 			internalError: err,
 		}
 	}
 
 	err = ioutil.WriteFile(srcPath, []byte(sourceCode), 0)
 	if err != nil {
-		return buildResult{
+		return BuildResult{
 			internalError: err,
 		}
 	}
 	err = compileSolution(srcPath, language, exePath)
 	if err != nil {
-		return buildResult{
+		return BuildResult{
 			buildError: err,
 		}
 	}
 	errs := checkSolution(exePath, cases, workdir)
-	return buildResult{
+	return BuildResult{
 		testCaseErrors: errs,
 	}
 }

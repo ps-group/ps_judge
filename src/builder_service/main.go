@@ -25,13 +25,14 @@ func main() {
 		panic(err)
 	}
 	databaseConnector := NewMySQLConnector(config)
-
+	webhookService := newWebhookService()
 	killChan := getKillSignalChan()
 
 	logFile := openFileLogger()
 	defer logFile.Close()
 	server := startServer(databaseConnector, defaultServerURL)
 	waitForKillSignal(killChan)
+	webhookService.close()
 	server.Shutdown(context.Background())
 }
 
