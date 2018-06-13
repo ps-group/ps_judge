@@ -9,10 +9,12 @@ type BuildInfo struct {
 }
 
 // RegisterBuild - contains information required to register new build
+// Language - either "c++" or "pascal"
 type RegisterBuild struct {
 	UUID       string `json:"uuid"`
-	Source     string
-	WebHookURL string
+	Source     string `json:"source"`
+	WebHookURL string `json:"web_hook_url"`
+	Language   string `json:"language"`
 }
 
 func getBuildInfo(c APIContext) error {
