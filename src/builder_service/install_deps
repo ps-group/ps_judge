@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export GOPATH="${SCRIPT_DIR}/../.."
+go get -u github.com/go-sql-driver/mysql
+go get -u github.com/gorilla/mux
+go get -u github.com/sirupsen/logrus

@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-
-	"workshops2018/videodb"
 )
 
 const (
@@ -50,8 +48,8 @@ func ParseConfig() (*Config, error) {
 	return &config, nil
 }
 
-func NewMySQLConnector(config *Config) videodb.DatabaseConnector {
-	var connector videodb.MySQLConnector
+func NewMySQLConnector(config *Config) DatabaseConnector {
+	var connector MySQLConnector
 	connector.User = config.MySQLUser
 	connector.Password = config.MySQLPassword
 	connector.Host = config.MySQLHost

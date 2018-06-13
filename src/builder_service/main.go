@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"workshops2018/videodb"
 
 	"github.com/sirupsen/logrus"
 )
@@ -52,7 +51,7 @@ func waitForKillSignal(killChan <-chan os.Signal) {
 	}
 }
 
-func startServer(connector videodb.DatabaseConnector, serverURL string) *http.Server {
+func startServer(connector DatabaseConnector, serverURL string) *http.Server {
 	logrus.WithFields(logrus.Fields{"url": serverURL}).Info("starting server")
 	server := &http.Server{Addr: serverURL, Handler: newRouter(connector)}
 	go func() {
