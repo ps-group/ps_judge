@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+BUILDER_WORKDIR=${PROJECT_DIR}/var/builder_service
+
+bash "${PROJECT_DIR}/src/builder_service/build"
+mkdir -p "${BUILDER_WORKDIR}"
+
+echo Running builder_service
+(cd "${BUILDER_WORKDIR}" && "${PROJECT_DIR}/bin/builder_service")
