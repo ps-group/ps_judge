@@ -33,6 +33,7 @@ func newWebhookService() *webhookServiceImpl {
 	service := new(webhookServiceImpl)
 	service.client = new(http.Client)
 	service.input = make(chan WebhookRequest)
+	service.closing = make(chan bool)
 	go service.listenWebhooks()
 	return service
 }

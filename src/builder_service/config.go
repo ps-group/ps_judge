@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"os"
 	"path"
@@ -14,11 +13,11 @@ const (
 
 // Config - video server instance configuration
 type Config struct {
-	Workdir       string `json:"workdir"`
 	MySQLUser     string `json:"mysql_user"`
 	MySQLPassword string `json:"mysql_password"`
 	MySQLHost     string `json:"mysql_host"`
 	MySQLDB       string `json:"mysql_db"`
+	ServerURL     string `json:"server_url"`
 }
 
 // ParseConfig loads instance configuration from pre-defined path (relative to executable)
@@ -38,11 +37,6 @@ func ParseConfig() (*Config, error) {
 	err = json.Unmarshal(content, &config)
 	if err != nil {
 		return nil, err
-	}
-
-	_, err = os.Stat(config.Workdir)
-	if err != nil && !os.IsExist(err) {
-		return nil, errors.New("workdir does not exist: " + config.Workdir)
 	}
 
 	return &config, nil

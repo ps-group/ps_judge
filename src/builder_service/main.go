@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -10,26 +11,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultServerURL = "localhost:8081"
-)
-
 func main() {
 	config, err := ParseConfig()
 	if err != nil {
 		panic(err)
 	}
-	err = os.Chdir(config.Workdir)
-	if err != nil {
-		panic(err)
-	}
+	fmt.Println("before NewMySQLConnector")
+
 	databaseConnector := NewMySQLConnector(config)
 	webhookService := newWebhookService()
+	fmt.Println("before getKillSignalChan")
 	killChan := getKillSignalChan()
 
 	logFile := openFileLogger()
 	defer logFile.Close()
-	server := startServer(databaseConnector, defaultServerURL)
+	server := startServer(databaseConnector, config.ServerURL)
 	waitForKillSignal(killChan)
 	webhookService.close()
 	server.Shutdown(context.Background())

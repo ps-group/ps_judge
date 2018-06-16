@@ -12,11 +12,11 @@ type BuildRepository interface {
 	PullPendingBuild() (*PendingBuildResult, error)
 	FinishBuild(params FinishBuildParams) error
 	GetBuildInfo(key string) (*BuildInfoResult, error)
-	GetAssignmentId(key string) (int, error)
+	GetAssignmentID(key string) (int, error)
 }
 
 type RegisterBuildParams struct {
-	AssignmentId int
+	AssignmentID int64
 	Key          string
 	Language     language
 	Source       string
@@ -24,7 +24,7 @@ type RegisterBuildParams struct {
 }
 
 type RegisterTestCaseParams struct {
-	AssignmentId int
+	AssignmentID int64
 	Key          string
 	Input        string
 	Output       string
@@ -63,7 +63,7 @@ func NewRepository(db *sql.DB) *BuildRepositoryImpl {
 
 func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
 	q := `INSERT INTO build SET assignment_id=?, key=?, status='pending', language=?, source=?,  web_hook_url=?`
-	rows, err := r.db.Query(q, params.Key, params.AssignmentId, params.Language, params.Source, params.WebHookURL)
+	rows, err := r.db.Query(q, params.Key, params.AssignmentID, params.Language, params.Source, params.WebHookURL)
 	if err != nil {
 		rows.Close()
 	}
@@ -72,7 +72,7 @@ func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
 
 func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) error {
 	q := `INSERT INTO testcase SET assignment_id=?, key=?, input=?, output=?, expected=?`
-	rows, err := r.db.Query(q, params.AssignmentId, params.Key, params.Input, params.Output, params.Expected)
+	rows, err := r.db.Query(q, params.AssignmentID, params.Key, params.Input, params.Output, params.Expected)
 	if err != nil {
 		rows.Close()
 	}
@@ -138,15 +138,26 @@ func (r *BuildRepositoryImpl) GetBuildInfo(key string) (*BuildInfoResult, error)
 	return &item, nil
 }
 
-func (r *BuildRepositoryImpl) GetAssignmentId(key string) (int, error) {
-	q := `SELECT id FROM build WHERE key = ?`
-	rows, err := r.db.Query(q, key)
+func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
+	rows, err := r.db.Query(`SELECT id FROM build WHERE key=?`, key)
 
 	if !rows.Next() {
-		return 0, errors.New("build with key '" + key + "' not found")
+		stmt, err := r.db.Prepare(`INSERT INTO build SET key=?`)
+		if err != nil {
+			return 0, err
+		}
+		res, err := stmt.Exec(key)
+		if err != nil {
+			return 0, err
+		}
+		id, _ := res.LastInsertId()
+		if err != nil {
+			return 0, err
+		}
+		return id, nil
 	}
 
-	var id int
+	var id int64
 	err = rows.Scan(&id)
 	if err != nil {
 		return 0, err

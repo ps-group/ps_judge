@@ -64,13 +64,13 @@ func createBuild(c APIContext) error {
 	defer db.Close()
 
 	repo := NewRepository(db)
-	assignmentID, err := repo.GetAssignmentId(params.AssignmentUUID)
+	assignmentID, err := repo.GetAssignmentID(params.AssignmentUUID)
 	if err != nil {
 		return err
 	}
 
 	err = repo.RegisterBuild(RegisterBuildParams{
-		AssignmentId: assignmentID,
+		AssignmentID: assignmentID,
 		Key:          params.UUID,
 		Language:     params.Language,
 		Source:       params.Source,
@@ -94,13 +94,13 @@ func createTestCase(c APIContext) error {
 	defer db.Close()
 
 	repo := NewRepository(db)
-	assignmentID, err := repo.GetAssignmentId(params.AssignmentUUID)
+	assignmentID, err := repo.GetAssignmentID(params.AssignmentUUID)
 	if err != nil {
 		return err
 	}
 
 	err = repo.RegisterTestCase(RegisterTestCaseParams{
-		AssignmentId: assignmentID,
+		AssignmentID: assignmentID,
 		Key:          params.UUID,
 		Input:        params.Input,
 		Output:       params.Output,
