@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -e
+
+# Usage: killNodeApp <ScriptDirectory>
+killNodeApp() {
+    local PROCESS_LIST=$(ps aux | grep $1 | grep node)
+    if [ $(echo "${PROCESS_LIST}" | wc -l) > 1 ]; then
+        local PID_LIST=$(echo ${PROCESS_LIST} | awk '{print $2}')
+        for pid in ${PID_LIST}; do {
+            echo "kill process ${pid} ($1)"
+            kill ${pid}
+        } done
+    fi
+}
+
+killNodeApp "frontend_server"
+killall builder_service
+echo "done"

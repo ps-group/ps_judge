@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+printf "Enter MySQL user: " && read user
+printf "Enter MySQL password: " && read -s password
+mysql -h localhost -u "$user" --password=$password < "${SCRIPT_DIR}/builder_model.sql"
+password=""
+user=""

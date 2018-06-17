@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+BUILDER_WORKDIR=${PROJECT_DIR}/var/builder_service
+FRONTEND_WORKDIR=${PROJECT_DIR}/var/frontend_server
+FRONTEND_SRC=${PROJECT_DIR}/src/frontend_server
+
+bash "${PROJECT_DIR}/src/builder_service/build"
+mkdir -p "${BUILDER_WORKDIR}"
+
+mkdir -p "${FRONTEND_WORKDIR}"
+rsync -a "${FRONTEND_SRC}/tpl/" "${FRONTEND_WORKDIR}/tpl/"
+rsync -a "${FRONTEND_SRC}/www/" "${FRONTEND_WORKDIR}/www/"
+rsync "${FRONTEND_SRC}/frontend_server.json" "${FRONTEND_WORKDIR}/frontend_server.json"

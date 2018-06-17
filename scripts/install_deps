@@ -4,3 +4,4 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 bash "$SCRIPT_DIR/../src/builder_service/install_deps"
 bash "$SCRIPT_DIR/../src/frontend_server/install_deps"
+sudo npm install --global json-log-viewer

@@ -4,9 +4,13 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
 BUILDER_WORKDIR=${PROJECT_DIR}/var/builder_service
+FRONTEND_SRC=${PROJECT_DIR}/src/frontend_server
+FRONTEND_WORKDIR=${PROJECT_DIR}/var/frontend_server
 
-bash "${PROJECT_DIR}/src/builder_service/build"
-mkdir -p "${BUILDER_WORKDIR}"
+"${SCRIPT_DIR}/build"
 
-echo Running builder_service
-(cd "${BUILDER_WORKDIR}" && "${PROJECT_DIR}/bin/builder_service")
+echo Running builder_service in background
+(cd "${BUILDER_WORKDIR}" && "${PROJECT_DIR}/bin/builder_service" 1>"builder_service_output.txt" 2>"builder_service_errors.txt" &)
+
+echo Running frontend_server in background
+(cd "${FRONTEND_WORKDIR}" && node "${FRONTEND_SRC}/src/server.js" 1>"frontend_server_output.txt" 2>"frontend_server_errors.txt" &)
