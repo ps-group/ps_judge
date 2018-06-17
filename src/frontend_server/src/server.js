@@ -24,7 +24,7 @@ class Server
 
     async start()
     {
-        this.config = await config.readConfig('config.json');
+        this.config = await config.readConfig('frontend_server.json');
         this.context = new appcontext.AppContext(this.config);
         this.createServer({
             "port": this.config.port,

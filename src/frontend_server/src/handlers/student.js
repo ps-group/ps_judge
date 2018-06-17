@@ -75,8 +75,8 @@ class Student extends basehandler.BaseHandler
                 solutionInfo = await this._repository.getSolutionInfo(userInfo.id, assignmentId);
             }
 
-            this._repository.createCommit(solutionInfo.id, uuid, source);
-            this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id, response);
+            await this._repository.createCommit(solutionInfo.id, uuid, source);
+            await this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id, response);
         }
     }
 

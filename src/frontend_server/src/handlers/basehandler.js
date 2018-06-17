@@ -72,7 +72,7 @@ class BaseHandler
     {
         if (!this._hasAuth(request))
         {
-            return this._redirect(routes.LOGIN_URL, response);
+            await this._redirect(routes.LOGIN_URL, response);
             return false;
         }
         return true;
