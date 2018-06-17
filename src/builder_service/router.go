@@ -68,10 +68,10 @@ func (c *DefaultAPIContext) ConnectDB() (*sql.DB, error) {
 	return c.connector.Connect()
 }
 
-func openFileLogger() *os.File {
+func openFileLogger(filename string) *os.File {
 	logrus.SetFormatter(&logrus.JSONFormatter{})
 
-	file, err := os.OpenFile("video_server.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +81,7 @@ func openFileLogger() *os.File {
 
 func newRouter(connector DatabaseConnector) *mux.Router {
 	router := mux.NewRouter()
-	subrouter := router.PathPrefix("/api/v1").Subrouter()
+	subrouter := router.PathPrefix(BuilderAPIPrefix).Subrouter()
 	start := time.Now()
 
 	decorateWithLog := func(inner http.Handler) http.Handler {

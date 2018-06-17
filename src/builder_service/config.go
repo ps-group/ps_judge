@@ -18,6 +18,7 @@ type Config struct {
 	MySQLHost     string `json:"mysql_host"`
 	MySQLDB       string `json:"mysql_db"`
 	ServerURL     string `json:"server_url"`
+	LogFileName   string `json:"log_file_name"`
 }
 
 // ParseConfig loads instance configuration from pre-defined path (relative to executable)

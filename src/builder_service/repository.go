@@ -2,7 +2,8 @@ package main
 
 import (
 	"database/sql"
-	"errors"
+
+	"github.com/pkg/errors"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -62,7 +63,7 @@ func NewRepository(db *sql.DB) *BuildRepositoryImpl {
 }
 
 func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
-	q := `INSERT INTO build SET assignment_id=?, key=?, status='pending', language=?, source=?,  web_hook_url=?`
+	q := "INSERT INTO build SET assignment_id=?, key=?, status='pending', language=?, source=?,  web_hook_url=?"
 	rows, err := r.db.Query(q, params.Key, params.AssignmentID, params.Language, params.Source, params.WebHookURL)
 	if err != nil {
 		rows.Close()
@@ -71,7 +72,7 @@ func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
 }
 
 func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) error {
-	q := `INSERT INTO testcase SET assignment_id=?, key=?, input=?, output=?, expected=?`
+	q := "INSERT INTO testcase SET assignment_id=?, key=?, input=?, output=?, expected=?"
 	rows, err := r.db.Query(q, params.AssignmentID, params.Key, params.Input, params.Output, params.Expected)
 	if err != nil {
 		rows.Close()
@@ -84,7 +85,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(`SELECT key, language, source FROM build WHERE status='pending'`)
+	rows, err := tx.Query("SELECT key, language, source FROM build WHERE `status`='pending'")
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tx.Query(`UPDATE build SET status='building' WHERE key=?`, build.Key)
+	_, err = tx.Query("UPDATE build SET status='building' WHERE key=?", build.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +112,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 }
 
 func (r *BuildRepositoryImpl) FinishBuild(params FinishBuildParams) error {
-	q := `UPDATE build SET status=?, score=?, report=? WHERE key=?`
+	q := "UPDATE build SET status=?, score=?, report=? WHERE `key`=?"
 	status := "failed"
 	if params.Succeed {
 		status = "succeed"
@@ -122,27 +123,30 @@ func (r *BuildRepositoryImpl) FinishBuild(params FinishBuildParams) error {
 }
 
 func (r *BuildRepositoryImpl) GetBuildInfo(key string) (*BuildInfoResult, error) {
-	q := `SELECT succeed, score, report, web_hook_url FROM video WHERE key = ?`
+	q := "SELECT status, score, report, web_hook_url FROM build WHERE `key`=?"
 	rows, err := r.db.Query(q, key)
+	if err != nil {
+		return nil, errors.Wrap(err, "SQL query failed")
+	}
 
 	if !rows.Next() {
-		return nil, errors.New("video with key '" + key + "' not found")
+		return nil, errors.New("build with key '" + key + "' not found")
 	}
 
 	var item BuildInfoResult
 	err = rows.Scan(&item.Status, &item.Score, &item.Report, &item.WebHookURL)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
 
 	return &item, nil
 }
 
 func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
-	rows, err := r.db.Query(`SELECT id FROM build WHERE key=?`, key)
+	rows, err := r.db.Query("SELECT id FROM build WHERE `key`=?", key)
 
 	if !rows.Next() {
-		stmt, err := r.db.Prepare(`INSERT INTO build SET key=?`)
+		stmt, err := r.db.Prepare("INSERT INTO build SET key=?")
 		if err != nil {
 			return 0, err
 		}

@@ -1,5 +1,10 @@
 package main
 
+const (
+	// BuilderAPIPrefix - API prefix added to all URLS
+	BuilderAPIPrefix = "/api/v1"
+)
+
 type routeJSON struct {
 	Method      string
 	Pattern     string
@@ -8,6 +13,7 @@ type routeJSON struct {
 
 type routesJSON []routeJSON
 
+// See BuilderAPIPrefix
 var jsonRoutes = routesJSON{
 	routeJSON{
 		"GET",
@@ -18,5 +24,10 @@ var jsonRoutes = routesJSON{
 		"POST",
 		"/build/new",
 		createBuild,
+	},
+	routeJSON{
+		"POST",
+		"/testcase/new",
+		createTestCase,
 	},
 }

@@ -1,5 +1,9 @@
 package main
 
+import (
+	"github.com/pkg/errors"
+)
+
 // BuildInfo - contains full build information.
 type BuildInfo struct {
 	UUID    string `json:"uuid"`
@@ -29,6 +33,9 @@ type RegisterTestCase struct {
 
 func getBuildInfo(c APIContext) error {
 	key := c.Vars()["uuid"]
+	if len(key) == 0 {
+		return errors.New("missed 'uuid' request parameter")
+	}
 
 	db, err := c.ConnectDB()
 	if err != nil {

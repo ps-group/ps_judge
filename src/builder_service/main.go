@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,14 +15,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("before NewMySQLConnector")
 
 	databaseConnector := NewMySQLConnector(config)
 	webhookService := newWebhookService()
-	fmt.Println("before getKillSignalChan")
 	killChan := getKillSignalChan()
 
-	logFile := openFileLogger()
+	logFile := openFileLogger(config.LogFileName)
 	defer logFile.Close()
 	server := startServer(databaseConnector, config.ServerURL)
 	waitForKillSignal(killChan)
