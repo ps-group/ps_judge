@@ -69,5 +69,5 @@ typings/
 #############################################
 # Custom rules
 
-# Config file
-config.json
+# Frontend config file
+frontend_server.json
