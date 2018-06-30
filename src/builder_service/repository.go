@@ -62,21 +62,34 @@ func NewRepository(db *sql.DB) *BuildRepositoryImpl {
 	return &r
 }
 
-func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
-	q := "INSERT INTO build SET assignment_id=?, key=?, status='pending', language=?, source=?,  web_hook_url=?"
-	rows, err := r.db.Query(q, params.Key, params.AssignmentID, params.Language, params.Source, params.WebHookURL)
+func (r *BuildRepositoryImpl) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
-		rows.Close()
+		if rows != nil {
+			rows.Close()
+		}
+		return nil, errors.Wrap(err, "sql query '"+query+"' failed")
 	}
+	return rows, nil
+}
+
+func (r *BuildRepositoryImpl) Prepare(query string) (*sql.Stmt, error) {
+	stmt, err := r.db.Prepare(query)
+	if err != nil {
+		return nil, errors.Wrap(err, "sql prepare '"+query+"' failed")
+	}
+	return stmt, nil
+}
+
+func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
+	q := "INSERT INTO build (`assignment_id`, `key`, `status`, `language`, `source`, `web_hook_url`) VALUES (?, ?, ?, ?, ?, ?)"
+	_, err := r.Query(q, params.AssignmentID, params.Key, "pending", params.Language, params.Source, params.WebHookURL)
 	return err
 }
 
 func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) error {
-	q := "INSERT INTO testcase SET assignment_id=?, key=?, input=?, output=?, expected=?"
-	rows, err := r.db.Query(q, params.AssignmentID, params.Key, params.Input, params.Output, params.Expected)
-	if err != nil {
-		rows.Close()
-	}
+	q := "INSERT INTO testcase (`assignment_id`, `key`, `input`, `output`, `expected`) VALUES (?, ?, ?, ?, ?)"
+	_, err := r.Query(q, params.AssignmentID, params.Key, params.Input, params.Output, params.Expected)
 	return err
 }
 
@@ -98,7 +111,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tx.Query("UPDATE build SET status='building' WHERE key=?", build.Key)
+	_, err = tx.Query("UPDATE build SET status='building' WHERE `key`=?", build.Key)
 	if err != nil {
 		return nil, err
 	}
@@ -117,14 +130,14 @@ func (r *BuildRepositoryImpl) FinishBuild(params FinishBuildParams) error {
 	if params.Succeed {
 		status = "succeed"
 	}
-	_, err := r.db.Query(q, status, params.Score, params.Report, params.Key)
+	_, err := r.Query(q, status, params.Score, params.Report, params.Key)
 
 	return err
 }
 
 func (r *BuildRepositoryImpl) GetBuildInfo(key string) (*BuildInfoResult, error) {
 	q := "SELECT status, score, report, web_hook_url FROM build WHERE `key`=?"
-	rows, err := r.db.Query(q, key)
+	rows, err := r.Query(q, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "SQL query failed")
 	}
@@ -143,10 +156,10 @@ func (r *BuildRepositoryImpl) GetBuildInfo(key string) (*BuildInfoResult, error)
 }
 
 func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
-	rows, err := r.db.Query("SELECT id FROM build WHERE `key`=?", key)
+	rows, err := r.Query("SELECT id FROM assignment WHERE `key`=?", key)
 
 	if !rows.Next() {
-		stmt, err := r.db.Prepare("INSERT INTO build SET key=?")
+		stmt, err := r.Prepare("INSERT INTO assignment (`key`) VALUES (?)")
 		if err != nil {
 			return 0, err
 		}
