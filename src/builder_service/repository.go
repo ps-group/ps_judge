@@ -28,7 +28,6 @@ type RegisterTestCaseParams struct {
 	AssignmentID int64
 	Key          string
 	Input        string
-	Output       string
 	Expected     string
 }
 
@@ -88,8 +87,8 @@ func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
 }
 
 func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) error {
-	q := "INSERT INTO testcase (`assignment_id`, `key`, `input`, `output`, `expected`) VALUES (?, ?, ?, ?, ?)"
-	_, err := r.Query(q, params.AssignmentID, params.Key, params.Input, params.Output, params.Expected)
+	q := "INSERT INTO testcase (`assignment_id`, `key`, `input`, `expected`) VALUES (?, ?, ?, ?)"
+	_, err := r.Query(q, params.AssignmentID, params.Key, params.Input, params.Expected)
 	return err
 }
 

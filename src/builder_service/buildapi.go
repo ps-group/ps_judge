@@ -27,7 +27,6 @@ type RegisterTestCaseRequest struct {
 	UUID           string `json:"uuid"`
 	AssignmentUUID string `json:"assignment_uuid"`
 	Input          string `json:"input"`
-	Output         string `json:"output"`
 	Expected       string `json:"expected"`
 }
 
@@ -125,7 +124,6 @@ func createTestCase(c APIContext) error {
 		AssignmentID: assignmentID,
 		Key:          params.UUID,
 		Input:        params.Input,
-		Output:       params.Output,
 		Expected:     params.Expected,
 	})
 	if err != nil {
