@@ -1,10 +1,13 @@
-from __future__ import print_function
+#!/usr/bin/env python3
+
 import json
 import uuid
 import os
 import subprocess
+import requests
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
+API_URL_PREFIX = 'http://localhost:8081/api/v1/'
 PASCAL_SOURCE = """PROGRAM APLUSB;
 VAR
   a, b: INTEGER;
@@ -21,8 +24,7 @@ class RegisterBuildScenario:
 
     def run(self):
         build_uuid = self.register_new_build()
-        info = self.call_build_info(build_uuid)
-        print('build status=', info('status'))
+        self.call_build_info(build_uuid)
 
     def register_new_build(self):
         build_uuid = self.create_uuid()
@@ -39,23 +41,24 @@ class RegisterBuildScenario:
     def call_build_info(self, build_uuid):
         response = self.json_api_get('build/' + build_uuid)
         assert response.get('uuid') == build_uuid
+        assert response.get('status') == 'pending'
+        assert response.get('score') == 0
+        assert response.get('details') == ""
         return response
 
     def json_api_post(self, method, request_dict):
-        url = 'localhost:8081/api/v1/' + method
-        data_path = os.path.join(SCRIPT_DIR, '__data__.json')
-        json_str = json.dumps(request_dict, indent=2)
-        with open(data_path, 'w') as data_file:
-            data_file.write(json_str)
-        cmd = ['curl', '-X', 'POST', '-H', 'Content-Type: application/json', '--data-binary', '@' + data_path, url]
-        stdout = self.exec_process(cmd)
-        return json.loads(stdout)
+        url = API_URL_PREFIX + method
+        data = json.dumps(request_dict, indent=2)
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        response = requests.post(url, data, headers=headers)
+        return response.json()
 
     def json_api_get(self, query):
-        url = 'localhost:8081/api/v1/' + query
-        cmd = ['curl', url]
-        stdout = self.exec_process(cmd)
-        return json.loads(stdout)
+        url = API_URL_PREFIX + query
+        response = requests.get(url)
+        return response.json()
 
     def exec_process(self, cmd):
         process = subprocess.Popen(cmd, cwd=SCRIPT_DIR, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
