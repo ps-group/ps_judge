@@ -23,24 +23,37 @@ class RegisterBuildScenario:
         self.assignment_uuid = self.create_uuid()
 
     def run(self):
+        self.register_test_case()
         build_uuid = self.register_new_build()
         self.call_build_info(build_uuid)
 
     def register_new_build(self):
-        build_uuid = self.create_uuid()
+        uuid = self.create_uuid()
         request = {
-            'uuid': build_uuid,
+            'uuid': uuid,
             'assignment_uuid': self.assignment_uuid,
             'language': "pascal",
-            'source': PASCAL_SOURCE
+            'source': PASCAL_SOURCE,
         }
         response = self.json_api_post('build/new', request)
-        assert response.get('uuid') == build_uuid
-        return build_uuid
+        assert response.get('uuid') == uuid
+        return uuid
 
-    def call_build_info(self, build_uuid):
-        response = self.json_api_get('build/' + build_uuid)
-        assert response.get('uuid') == build_uuid
+    def register_test_case(self):
+        uuid = self.create_uuid()
+        request = {
+            'uuid': uuid,
+            'assignment_uuid': self.assignment_uuid,
+            'input': '1+2\n',
+            'expected': '3\n',
+        }
+        response = self.json_api_post('testcase/new', request)
+        assert response.get('uuid') == uuid
+        return uuid
+
+    def call_build_info(self, uuid):
+        response = self.json_api_get('build/' + uuid)
+        assert response.get('uuid') == uuid
         assert response.get('status') == 'pending'
         assert response.get('score') == 0
         assert response.get('details') == ""
