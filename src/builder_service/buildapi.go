@@ -8,7 +8,7 @@ import (
 type BuildInfoResponse struct {
 	UUID    string `json:"uuid"`
 	Status  Status `json:"status"`
-	Score   int    `json:"score"`
+	Score   int64  `json:"score"`
 	Details string `json:"details"`
 }
 
@@ -53,11 +53,15 @@ func getBuildInfo(c APIContext) error {
 		return err
 	}
 
+	score := int64(0)
+	row.Score.Scan(&score)
+	details := ""
+	row.Report.Scan(&details)
 	res := &BuildInfoResponse{
 		UUID:    key,
 		Status:  row.Status,
-		Score:   row.Score,
-		Details: row.Report,
+		Score:   score,
+		Details: details,
 	}
 	return c.WriteJSON(res)
 }

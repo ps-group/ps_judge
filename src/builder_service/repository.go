@@ -41,9 +41,9 @@ type FinishBuildParams struct {
 
 type BuildInfoResult struct {
 	Status     Status
-	Score      int
-	Report     string
-	WebHookURL string
+	Score      sql.NullInt64
+	Report     sql.NullString
+	WebHookURL sql.NullString
 }
 
 type PendingBuildResult struct {
