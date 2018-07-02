@@ -36,6 +36,7 @@ class RegisterBuildScenario:
             'source': PASCAL_SOURCE,
         }
         response = self.json_api_post('build/new', request)
+        print('registered build ' + uuid)
         assert response.get('uuid') == uuid
         return uuid
 
@@ -48,11 +49,13 @@ class RegisterBuildScenario:
             'expected': '3\n',
         }
         response = self.json_api_post('testcase/new', request)
+        print('registered test case ' + uuid)
         assert response.get('uuid') == uuid
         return uuid
 
     def call_build_info(self, uuid):
         response = self.json_api_get('build/' + uuid)
+        print('got info for build ' + uuid)
         assert response.get('uuid') == uuid
         assert response.get('status') == 'pending'
         assert response.get('score') == 0

@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	workerNum     = 3
-	sleepInterval = 1 * time.Second
+	workerNum     = 1
+	sleepInterval = 5 * time.Second
 )
 
 type Task interface {

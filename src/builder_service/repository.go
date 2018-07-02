@@ -93,11 +93,7 @@ func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) er
 }
 
 func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return nil, err
-	}
-	rows, err := tx.Query("SELECT key, language, source FROM build WHERE `status`='pending'")
+	rows, err := r.Query("SELECT `key`, `language`, `source` FROM build WHERE `status` = 'pending' LIMIT 1")
 	if err != nil {
 		return nil, err
 	}
@@ -110,12 +106,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = tx.Query("UPDATE build SET status='building' WHERE `key`=?", build.Key)
-	if err != nil {
-		return nil, err
-	}
-
-	err = tx.Commit()
+	_, err = r.Query("UPDATE build SET status='building' WHERE `key`=?", build.Key)
 	if err != nil {
 		return nil, err
 	}

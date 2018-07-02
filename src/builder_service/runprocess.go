@@ -1,12 +1,14 @@
 package main
 
 import (
-	"errors"
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 // ProcessLimits - process limits
@@ -116,13 +118,33 @@ func runLimitedProcess(options processRunOptions, cmd string, arg ...string) err
 func compileSolution(filepath string, language language, outputPath string) error {
 	var cmd *exec.Cmd
 	if language == languagePascal {
-		cmd = exec.Command("gpc", filepath, outputPath, "-w", "--extended-syntax", "--implicit-result")
+		// GNU Pascal is outdated - we don't use it anymore.
+		// cmd = exec.Command("gpc", filepath, outputPath, "-w", "--extended-syntax", "--implicit-result")
+		cmd = exec.Command("fpc", "-Mtp", "-So", "-o"+outputPath, filepath)
 	} else if language == languageCpp {
-		cmd = exec.Command("gcc", filepath, outputPath, "--std=c++17")
+		cmd = exec.Command("gcc", filepath, "-o", outputPath, "--std=c++17")
 	} else {
 		return errors.New("unknown language value passed")
 	}
-	return cmd.Run()
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if err != nil {
+		reason := fmt.Sprintf("compilation failed: %s", err.Error())
+		errText := string(stderr.Bytes())
+		if len(errText) > 0 {
+			reason += "\n"
+			reason += errText
+		}
+		outText := string(stdout.Bytes())
+		if len(outText) > 0 {
+			reason += "\n"
+			reason += outText
+		}
+		return errors.New(reason)
+	}
+	return nil
 }
 
 func checkSolution(executablePath string, cases []testCase, workdir string) []error {
@@ -161,14 +183,14 @@ func buildSolution(sourceCode string, language language, cases []testCase, workd
 	srcPath := filepath.Join(workdir, "solution"+getLanguageExt(language))
 	exePath := filepath.Join(workdir, "solution")
 	runWorkdir := filepath.Join(workdir, "run")
-	err := os.MkdirAll(runWorkdir, 0)
+	err := os.MkdirAll(runWorkdir, os.ModePerm)
 	if err != nil {
 		return BuildResult{
 			internalError: err,
 		}
 	}
 
-	err = ioutil.WriteFile(srcPath, []byte(sourceCode), 0)
+	err = ioutil.WriteFile(srcPath, []byte(sourceCode), os.ModePerm)
 	if err != nil {
 		return BuildResult{
 			internalError: err,

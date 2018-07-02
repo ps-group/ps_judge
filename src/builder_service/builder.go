@@ -49,6 +49,7 @@ func createBuildReport(result BuildResult) BuildReport {
 
 func (t *buildTask) Run(workerID int) error {
 	workdir := fmt.Sprintf("builder_%d", workerID)
+	logrus.WithField("uuid", t.key).Info("running build")
 	result := buildSolution(t.source, t.language, t.cases, workdir)
 	report := createBuildReport(result)
 	t.output <- report
