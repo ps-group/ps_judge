@@ -20,25 +20,16 @@ type processLimits struct {
 	AddessSpaceMB int // max address space size, in mebabytes
 }
 
-type solutionError struct {
-	reason string
-}
-
-func (e *solutionError) Error() string {
-	return "solution failed: " + e.reason
-}
-
-type testCase struct {
-	inputPath    string
-	outputPath   string
-	expectedPath string
+type TestCase struct {
+	Input    string
+	Expected string
 }
 
 type processRunOptions struct {
-	workdir    string
-	stdinPath  string
-	stdoutPath string
-	limits     *processLimits
+	workdir  string
+	input    string
+	expected string
+	limits   *processLimits
 }
 
 // newProcessLimits - creates new ProcessLimits with default values
@@ -66,51 +57,46 @@ func runLimitedProcess(options processRunOptions, cmd string, arg ...string) err
 	prlimitArgs = append(prlimitArgs, cmd)
 	prlimitArgs = append(prlimitArgs, arg...)
 
-	process := exec.Command("prlimit", prlimitArgs...)
+	// process := exec.Command("prlimit", prlimitArgs...)
+	process := exec.Command(cmd)
+	var stdin, stdout, stderr bytes.Buffer
+	_, err := stdin.WriteString(options.input)
+	if err != nil {
+		return errors.Wrap(err, "cannot write into stdin pipe")
+	}
+
 	process.Dir = options.workdir
-	stdin, err := process.StdinPipe()
+	process.Stdin = &stdin
+	process.Stdout = &stdout
+	process.Stderr = &stderr
+
+	err = process.Run()
 	if err != nil {
-		return err
-	}
-	stdout, err := process.StdoutPipe()
-	if err != nil {
-		return err
-	}
-	err = process.Start()
-	if err != nil {
-		return err
-	}
-	stdinBytes, err := ioutil.ReadFile(options.stdinPath)
-	if err != nil {
-		return err
-	}
-	_, err = stdin.Write(stdinBytes)
-	if err != nil {
-		return err
-	}
-	err = stdin.Close()
-	if err != nil {
-		return err
-	}
-	err = process.Wait()
-	if err != nil {
-		return &solutionError{
-			reason: err.Error(),
+		reason := fmt.Sprintf("run failed: %s", err.Error())
+		errText := string(stderr.Bytes())
+		if len(errText) > 0 {
+			reason += "\n"
+			reason += errText
 		}
-	}
-	outputBytes, err := ioutil.ReadAll(stdout)
-	if err != nil {
-		return err
-	}
-	expectedBytes, err := ioutil.ReadFile(options.stdoutPath)
-	if err != nil {
-		return err
-	}
-	if string(outputBytes) != string(expectedBytes) {
-		return &solutionError{
-			reason: "output doesn't match expected",
+		outText := string(stdout.Bytes())
+		if len(outText) > 0 {
+			reason += "\n"
+			reason += outText
 		}
+		return errors.New(reason)
 	}
+
+	output := string(stdout.Bytes())
+
+	// TODO: allow fuzzy comparison (ignore extra whitespace at end)
+
+	if output != options.expected {
+		return errors.New(fmt.Sprintf(
+			"output does not match expected:\n--OUTPUT--\n%s\n--EXPECTED--\n%s",
+			output,
+			options.expected))
+	}
+
 	return nil
 }
 
@@ -147,15 +133,17 @@ func compileSolution(filepath string, language language, outputPath string) erro
 	return nil
 }
 
-func checkSolution(executablePath string, cases []testCase, workdir string) []error {
+func checkSolution(executablePath string, cases []TestCase, workdir string) []error {
+	executablePath, _ = filepath.Abs(executablePath)
+
 	var errors []error
 	for _, c := range cases {
 		limits := newProcessLimits()
 		options := processRunOptions{
-			limits:     limits,
-			workdir:    workdir,
-			stdinPath:  c.inputPath,
-			stdoutPath: c.outputPath,
+			limits:   limits,
+			workdir:  workdir,
+			input:    c.Input,
+			expected: c.Expected,
 		}
 		err := runLimitedProcess(options, executablePath)
 		errors = append(errors, err)
@@ -179,7 +167,7 @@ func getLanguageExt(language language) string {
 	return ".unknown"
 }
 
-func buildSolution(sourceCode string, language language, cases []testCase, workdir string) BuildResult {
+func buildSolution(sourceCode string, language language, cases []TestCase, workdir string) BuildResult {
 	srcPath := filepath.Join(workdir, "solution"+getLanguageExt(language))
 	exePath := filepath.Join(workdir, "solution")
 	runWorkdir := filepath.Join(workdir, "run")

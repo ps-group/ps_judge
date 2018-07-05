@@ -16,6 +16,7 @@ type BuildReportResponse struct {
 	Status      Status `json:"status"`
 	Exception   string `json:"exception"`
 	BuildLog    string `json:"build_log"`
+	TestsLog    string `json:"tests_log"`
 	TestsPassed int64  `json:"tests_passed"`
 	TestsTotal  int64  `json:"tests_total"`
 }
@@ -64,6 +65,7 @@ func getBuildReport(c APIContext) error {
 		Status:      report.Status,
 		Exception:   report.Exception,
 		BuildLog:    report.BuildLog,
+		TestsLog:    report.TestsLog,
 		TestsPassed: report.TestsPassed,
 		TestsTotal:  report.TestsTotal,
 	}

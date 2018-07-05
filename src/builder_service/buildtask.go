@@ -10,7 +10,7 @@ type buildTask struct {
 	language language
 	source   string
 	key      string
-	cases    []testCase
+	cases    []TestCase
 	reports  chan BuildReport
 }
 
@@ -41,9 +41,11 @@ func (t *buildTask) createBuildReport(result BuildResult) BuildReport {
 		report.Status = StatusSucceed
 		report.TestsTotal = int64(len(result.testCaseErrors))
 		report.TestsPassed = 0
-		for _, err := range result.testCaseErrors {
+		for i, err := range result.testCaseErrors {
 			if err == nil {
 				report.TestsPassed++
+			} else {
+				report.TestsLog += fmt.Sprintf("--- FAILURE IN TEST %d ---\n%s\n", i, err.Error())
 			}
 		}
 	}
@@ -74,10 +76,16 @@ func (g *buildTaskGenerator) Next() (bool, Task) {
 	if build == nil {
 		return false, nil
 	}
+	cases, err := repo.GetTestCases(build.AssignmentID)
+	if err != nil {
+		logrus.WithField("error", err).Error("cannot read test cases")
+		return false, nil
+	}
 	var task buildTask
 	task.language = build.Language
 	task.source = build.Source
 	task.key = build.Key
+	task.cases = cases
 	task.reports = g.reports
 	return true, &task
 }

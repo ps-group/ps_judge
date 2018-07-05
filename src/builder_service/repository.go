@@ -34,15 +34,17 @@ type BuildReport struct {
 	Key         string
 	Exception   string
 	BuildLog    string
+	TestsLog    string
 	TestsPassed int64
 	TestsTotal  int64
 	Status      Status
 }
 
 type PendingBuildResult struct {
-	Key      string
-	Source   string
-	Language language
+	AssignmentID int
+	Key          string
+	Source       string
+	Language     language
 }
 
 type BuildRepositoryImpl struct {
@@ -87,7 +89,7 @@ func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) er
 }
 
 func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
-	rows, err := r.Query("SELECT `key`, `language`, `source` FROM build WHERE `status` = 'pending' LIMIT 1")
+	rows, err := r.Query("SELECT `assignment_id`, `key`, `language`, `source` FROM build WHERE `status` = 'pending' LIMIT 1")
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +98,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 		return nil, nil
 	}
 	var build PendingBuildResult
-	err = rows.Scan(&build.Key, &build.Language, &build.Source)
+	err = rows.Scan(&build.AssignmentID, &build.Key, &build.Language, &build.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +114,8 @@ func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
 	buildID, err := r.getBuildID(params.Key)
 
 	_, err = r.Query(
-		"INSERT INTO report (`build_id`, `tests_passed`, `tests_total`, `exception`, `build_log`) VALUES (?, ?, ?, ?, ?)",
-		buildID, params.TestsPassed, params.TestsTotal, params.Exception, params.BuildLog)
+		"INSERT INTO report (`build_id`, `tests_passed`, `tests_total`, `exception`, `build_log`, `tests_log`) VALUES (?, ?, ?, ?, ?, ?)",
+		buildID, params.TestsPassed, params.TestsTotal, params.Exception, params.BuildLog, params.TestsLog)
 	if err != nil {
 		return errors.Wrap(err, "SQL INSERT query failed")
 	}
@@ -123,6 +125,23 @@ func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
 	}
 
 	return err
+}
+
+func (r *BuildRepositoryImpl) GetTestCases(assignmentID int) ([]TestCase, error) {
+	var cases []TestCase
+	rows, err := r.Query("SELECT input, expected FROM testcase WHERE `assignment_id`=?", assignmentID)
+	if err != nil {
+		return cases, errors.Wrap(err, "SQL SELECT query failed")
+	}
+	for rows.Next() {
+		var result TestCase
+		err = rows.Scan(&result.Input, &result.Expected)
+		if err != nil {
+			return cases, errors.Wrap(err, "scan SQL result failed")
+		}
+		cases = append(cases, result)
+	}
+	return cases, nil
 }
 
 func (r *BuildRepositoryImpl) GetBuildStatus(key string) (Status, error) {
@@ -156,18 +175,18 @@ func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
 		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
 
-	rows, err = r.Query("SELECT tests_passed, tests_total, exception, build_log FROM report WHERE `build_id`=?", buildID)
+	rows, err = r.Query("SELECT tests_passed, tests_total, exception, build_log, tests_log FROM report WHERE `build_id`=?", buildID)
 	if err != nil {
 		return nil, errors.Wrap(err, "SQL SELECT query failed")
 	}
 	if !rows.Next() {
-		return nil, errors.New("build with key '" + key + "' not found")
+		return nil, errors.New("report for build with key '" + key + "' not found")
 	}
 
 	var report BuildReport
 	report.Key = key
 	report.Status = status
-	err = rows.Scan(&report.TestsPassed, &report.TestsTotal, &report.Exception, &report.BuildLog)
+	err = rows.Scan(&report.TestsPassed, &report.TestsTotal, &report.Exception, &report.BuildLog, &report.TestsLog)
 	if err != nil {
 		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
