@@ -5,6 +5,7 @@ import uuid
 import os
 import subprocess
 import requests
+import time
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 API_URL_PREFIX = 'http://localhost:8081/api/v1/'
@@ -25,7 +26,15 @@ class RegisterBuildScenario:
     def run(self):
         self.register_test_case()
         build_uuid = self.register_new_build()
-        self.call_build_info(build_uuid)
+
+        while True:
+            response = self.get_build_status(build_uuid)
+            if response["status"] != "pending":
+                break
+            time.sleep(1.0)
+        print('build {0} finished'.format(build_uuid))
+        report = self.get_build_report(build_uuid)
+        print('build {0} report:\n{1}'.format(build_uuid, json.dumps(report, indent=2)))
 
     def register_new_build(self):
         uuid = self.create_uuid()
@@ -53,11 +62,17 @@ class RegisterBuildScenario:
         assert response.get('uuid') == uuid
         return uuid
 
-    def call_build_info(self, uuid):
+    def get_build_status(self, uuid):
         response = self.json_api_get('build/status/' + uuid)
         print('got info for build ' + uuid)
         assert response.get('uuid') == uuid
-        assert response.get('status') == 'pending'
+        assert response.get('status') != ''
+        return response
+
+    def get_build_report(self, uuid):
+        response = self.json_api_get('build/report/' + uuid)
+        print('got report for build ' + uuid)
+        assert response.get('uuid') == uuid
         return response
 
     def json_api_post(self, method, request_dict):
