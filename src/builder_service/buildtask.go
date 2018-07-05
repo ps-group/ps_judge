@@ -6,63 +6,55 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	MaxBuildScore = 100
-)
-
-type BuildReport struct {
-	log    string
-	score  int
-	status Status
-}
-
 type buildTask struct {
 	language language
 	source   string
 	key      string
 	cases    []testCase
-	output   chan BuildReport
-}
-
-func createBuildReport(result BuildResult) BuildReport {
-	var report BuildReport
-	if result.internalError != nil {
-		report.log = result.internalError.Error()
-		report.status = StatusException
-	} else if result.buildError != nil {
-		report.log = result.buildError.Error()
-		report.status = StatusFailed
-	} else {
-		succeedCount := 0
-		for i, err := range result.testCaseErrors {
-			if err != nil {
-				report.log += fmt.Sprintf("#%d case failed\n", i+1)
-			} else {
-				succeedCount++
-			}
-		}
-		report.status = StatusSucceed
-		report.score = (succeedCount * MaxBuildScore) / len(result.testCaseErrors)
-	}
-	return report
+	reports  chan BuildReport
 }
 
 func (t *buildTask) Run(workerID int) error {
 	workdir := fmt.Sprintf("builder_%d", workerID)
 	logrus.WithField("uuid", t.key).Info("running build")
 	result := buildSolution(t.source, t.language, t.cases, workdir)
-	report := createBuildReport(result)
-	t.output <- report
+	report := t.createBuildReport(result)
+	t.reports <- report
 	return nil
 }
 
 type buildTaskGenerator struct {
 	connector DatabaseConnector
+	reports   chan BuildReport
 }
 
-func newBuildTaskGenerator(connector DatabaseConnector) *buildTaskGenerator {
+func (t *buildTask) createBuildReport(result BuildResult) BuildReport {
+	var report BuildReport
+	report.Key = t.key
+	if result.internalError != nil {
+		report.Exception = result.internalError.Error()
+		report.Status = StatusException
+	} else if result.buildError != nil {
+		report.BuildLog = result.buildError.Error()
+		report.Status = StatusFailed
+	} else {
+		report.Status = StatusSucceed
+		report.TestsTotal = int64(len(result.testCaseErrors))
+		report.TestsPassed = 0
+		for _, err := range result.testCaseErrors {
+			if err == nil {
+				report.TestsPassed++
+			}
+		}
+	}
+	return report
+}
+
+func newBuildTaskGenerator(connector DatabaseConnector, reports chan BuildReport) *buildTaskGenerator {
 	var generator buildTaskGenerator
 	generator.connector = connector
+	generator.reports = reports
+
 	return &generator
 }
 
@@ -86,6 +78,6 @@ func (g *buildTaskGenerator) Next() (bool, Task) {
 	task.language = build.Language
 	task.source = build.Source
 	task.key = build.Key
-	task.output = make(chan BuildReport)
+	task.reports = g.reports
 	return true, &task
 }

@@ -17,8 +17,13 @@ type routesJSON []routeJSON
 var jsonRoutes = routesJSON{
 	routeJSON{
 		"GET",
-		"/build/{uuid}",
-		getBuildInfo,
+		"/build/report/{uuid}",
+		getBuildReport,
+	},
+	routeJSON{
+		"GET",
+		"/build/status/{uuid}",
+		getBuildStatus,
 	},
 	routeJSON{
 		"POST",

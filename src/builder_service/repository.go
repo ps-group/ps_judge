@@ -11,8 +11,8 @@ import (
 type BuildRepository interface {
 	RegisterBuild(params RegisterBuildParams) error
 	PullPendingBuild() (*PendingBuildResult, error)
-	FinishBuild(params FinishBuildParams) error
-	GetBuildInfo(key string) (*BuildInfoResult, error)
+	AddBuildReport(params BuildReport) error
+	GetBuildReport(key string) (*BuildReport, error)
 	GetAssignmentID(key string) (int, error)
 }
 
@@ -31,18 +31,13 @@ type RegisterTestCaseParams struct {
 	Expected     string
 }
 
-type FinishBuildParams struct {
-	Key     string
-	Succeed bool
-	Score   int
-	Report  string
-}
-
-type BuildInfoResult struct {
-	Status     Status
-	Score      sql.NullInt64
-	Report     sql.NullString
-	WebHookURL sql.NullString
+type BuildReport struct {
+	Key         string
+	Exception   string
+	BuildLog    string
+	TestsPassed int64
+	TestsTotal  int64
+	Status      Status
 }
 
 type PendingBuildResult struct {
@@ -114,35 +109,71 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 	return &build, nil
 }
 
-func (r *BuildRepositoryImpl) FinishBuild(params FinishBuildParams) error {
-	q := "UPDATE build SET status=?, score=?, report=? WHERE `key`=?"
-	status := "failed"
-	if params.Succeed {
-		status = "succeed"
+func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
+	buildID, err := r.getBuildID(params.Key)
+
+	_, err = r.Query(
+		"INSERT INTO report (`build_id`, `tests_passed`, `tests_total`, `exception`, `build_log`) VALUES (?, ?, ?, ?, ?)",
+		buildID, params.TestsPassed, params.TestsTotal, params.Exception, params.BuildLog)
+	if err != nil {
+		return errors.Wrap(err, "SQL INSERT query failed")
 	}
-	_, err := r.Query(q, status, params.Score, params.Report, params.Key)
+	_, err = r.Query("UPDATE build SET status=? WHERE `id`=?", params.Status, buildID)
+	if err != nil {
+		return errors.Wrap(err, "SQL UPDATE query failed")
+	}
 
 	return err
 }
 
-func (r *BuildRepositoryImpl) GetBuildInfo(key string) (*BuildInfoResult, error) {
-	q := "SELECT status, score, report, web_hook_url FROM build WHERE `key`=?"
-	rows, err := r.Query(q, key)
+func (r *BuildRepositoryImpl) GetBuildStatus(key string) (Status, error) {
+	rows, err := r.Query("SELECT status FROM build WHERE `key`=", key)
 	if err != nil {
-		return nil, errors.Wrap(err, "SQL query failed")
+		return "", errors.Wrap(err, "SQL SELECT query failed")
 	}
+	if !rows.Next() {
+		return "", errors.New("build with key '" + key + "' not found")
+	}
+	var status Status
+	err = rows.Scan(&status)
+	if err != nil {
+		return "", errors.Wrap(err, "scan SQL result failed")
+	}
+	return status, nil
+}
 
+func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
+	rows, err := r.Query("SELECT id, status FROM build WHERE `key`=?", key)
+	if err != nil {
+		return nil, errors.Wrap(err, "SQL SELECT query failed")
+	}
 	if !rows.Next() {
 		return nil, errors.New("build with key '" + key + "' not found")
 	}
-
-	var item BuildInfoResult
-	err = rows.Scan(&item.Status, &item.Score, &item.Report, &item.WebHookURL)
+	var buildID int64
+	var status Status
+	err = rows.Scan(&buildID, &status)
 	if err != nil {
 		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
 
-	return &item, nil
+	rows, err = r.Query("SELECT status, tests_passed, tests_total, exception, build_log FROM report WHERE `build_id`=?", buildID)
+	if err != nil {
+		return nil, errors.Wrap(err, "SQL SELECT query failed")
+	}
+	if !rows.Next() {
+		return nil, errors.New("build with key '" + key + "' not found")
+	}
+
+	var report BuildReport
+	report.Key = key
+	report.Status = status
+	err = rows.Scan(&report.Status, &report.TestsPassed, &report.TestsTotal, &report.Exception, &report.BuildLog)
+	if err != nil {
+		return nil, errors.Wrap(err, "scan SQL result failed")
+	}
+
+	return &report, nil
 }
 
 func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
@@ -171,4 +202,20 @@ func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func (r *BuildRepositoryImpl) getBuildID(key string) (int64, error) {
+	rows, err := r.Query("SELECT id FROM build WHERE `key`=?", key)
+	if err != nil {
+		return 0, errors.Wrap(err, "SQL SELECT query failed")
+	}
+	if !rows.Next() {
+		return 0, errors.New("build with key '" + key + "' not found")
+	}
+	var buildID int64
+	err = rows.Scan(&buildID)
+	if err != nil {
+		return 0, errors.Wrap(err, "scan SQL result failed")
+	}
+	return buildID, nil
 }

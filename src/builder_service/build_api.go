@@ -4,12 +4,20 @@ import (
 	"github.com/pkg/errors"
 )
 
-// BuildInfoResponse - contains full build information.
-type BuildInfoResponse struct {
-	UUID    string `json:"uuid"`
-	Status  Status `json:"status"`
-	Score   int64  `json:"score"`
-	Details string `json:"details"`
+// BuildStatusResponse - contains build status.
+type BuildStatusResponse struct {
+	UUID   string `json:"uuid"`
+	Status Status `json:"status"`
+}
+
+// BuildReportResponse - contains full build information.
+type BuildReportResponse struct {
+	UUID        string `json:"uuid"`
+	Status      Status `json:"status"`
+	Exception   string `json:"exception"`
+	BuildLog    string `json:"build_log"`
+	TestsPassed int64  `json:"tests_passed"`
+	TestsTotal  int64  `json:"tests_total"`
 }
 
 // RegisterBuildRequest - contains information required to register new build
@@ -35,7 +43,7 @@ type RegisterResponse struct {
 	UUID string `json:"uuid"`
 }
 
-func getBuildInfo(c APIContext) error {
+func getBuildReport(c APIContext) error {
 	key := c.Vars()["uuid"]
 	if len(key) == 0 {
 		return errors.New("missed 'uuid' request parameter")
@@ -47,20 +55,42 @@ func getBuildInfo(c APIContext) error {
 	}
 	defer db.Close()
 	repo := NewRepository(db)
-	row, err := repo.GetBuildInfo(key)
+	report, err := repo.GetBuildReport(key)
 	if err != nil {
 		return err
 	}
 
-	score := int64(0)
-	row.Score.Scan(&score)
-	details := ""
-	row.Report.Scan(&details)
-	res := &BuildInfoResponse{
-		UUID:    key,
-		Status:  row.Status,
-		Score:   score,
-		Details: details,
+	res := &BuildReportResponse{
+		UUID:        key,
+		Status:      report.Status,
+		Exception:   report.Exception,
+		BuildLog:    report.BuildLog,
+		TestsPassed: report.TestsPassed,
+		TestsTotal:  report.TestsTotal,
+	}
+	return c.WriteJSON(res)
+}
+
+func getBuildStatus(c APIContext) error {
+	key := c.Vars()["uuid"]
+	if len(key) == 0 {
+		return errors.New("missed 'uuid' request parameter")
+	}
+
+	db, err := c.ConnectDB()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	repo := NewRepository(db)
+	status, err := repo.GetBuildStatus(key)
+	if err != nil {
+		return err
+	}
+
+	res := &BuildStatusResponse{
+		UUID:   key,
+		Status: status,
 	}
 	return c.WriteJSON(res)
 }

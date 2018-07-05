@@ -17,23 +17,19 @@ func main() {
 	}
 
 	databaseConnector := NewMySQLConnector(config)
-	webhookService := newWebhookService()
-	generator := newBuildTaskGenerator(databaseConnector)
+	master := NewBuildMaster(databaseConnector)
 	killChan := getKillSignalChan()
-	stopChan := make(chan struct{})
 
 	logFile := openFileLogger(config.LogFileName)
 	defer logFile.Close()
 	server := startServer(databaseConnector, config.ServerURL)
-	wg := RunWorkerPool(generator, stopChan)
+	master.RunWorkerPool()
 
 	// Wait for SIGTERM
 	waitForKillSignal(killChan)
 
 	server.Shutdown(context.Background())
-	stopChan <- struct{}{}
-	wg.Wait()
-	webhookService.close()
+	master.Close()
 }
 
 func getKillSignalChan() chan os.Signal {
