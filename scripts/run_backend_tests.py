@@ -54,12 +54,10 @@ class RegisterBuildScenario:
         return uuid
 
     def call_build_info(self, uuid):
-        response = self.json_api_get('build/' + uuid)
+        response = self.json_api_get('build/status/' + uuid)
         print('got info for build ' + uuid)
         assert response.get('uuid') == uuid
         assert response.get('status') == 'pending'
-        assert response.get('score') == 0
-        assert response.get('details') == ""
         return response
 
     def json_api_post(self, method, request_dict):
@@ -74,6 +72,9 @@ class RegisterBuildScenario:
     def json_api_get(self, query):
         url = API_URL_PREFIX + query
         response = requests.get(url)
+        if response.status_code != 200:
+            reason = "status code {0} on URL '{1}'\n{2}".format(response.status_code, url, response.text)
+            raise RuntimeError(reason)
         return response.json()
 
     def exec_process(self, cmd):
