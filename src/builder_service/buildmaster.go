@@ -65,7 +65,10 @@ func (master *BuildMaster) processBuildReport(report BuildReport) error {
 	defer db.Close()
 
 	repo := NewRepository(db)
-	repo.AddBuildReport(report)
+	err = repo.AddBuildReport(report)
+	if err != nil {
+		return errors.Wrap(err, "cannot add build report")
+	}
 	err = master.fireBuildFinished(report.Key, report.Status == StatusSucceed)
 	if err != nil {
 		return errors.Wrap(err, "cannot post build finished")

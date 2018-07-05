@@ -27,7 +27,6 @@ type RegisterBuildRequest struct {
 	AssignmentUUID string   `json:"assignment_uuid"`
 	Language       language `json:"language"`
 	Source         string   `json:"source"`
-	WebHookURL     string   `json:"web_hook_url"`
 }
 
 // RegisterTestCaseRequest - contains information required to register tes case
@@ -119,7 +118,6 @@ func createBuild(c APIContext) error {
 		Key:          params.UUID,
 		Language:     params.Language,
 		Source:       params.Source,
-		WebHookURL:   params.WebHookURL,
 	})
 	if err != nil {
 		return err

@@ -21,7 +21,6 @@ type RegisterBuildParams struct {
 	Key          string
 	Language     language
 	Source       string
-	WebHookURL   string
 }
 
 type RegisterTestCaseParams struct {
@@ -76,8 +75,8 @@ func (r *BuildRepositoryImpl) Prepare(query string) (*sql.Stmt, error) {
 }
 
 func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
-	q := "INSERT INTO build (`assignment_id`, `key`, `status`, `language`, `source`, `web_hook_url`) VALUES (?, ?, ?, ?, ?, ?)"
-	_, err := r.Query(q, params.AssignmentID, params.Key, "pending", params.Language, params.Source, params.WebHookURL)
+	q := "INSERT INTO build (`assignment_id`, `key`, `status`, `language`, `source`) VALUES (?, ?, ?, ?, ?)"
+	_, err := r.Query(q, params.AssignmentID, params.Key, "pending", params.Language, params.Source)
 	return err
 }
 
