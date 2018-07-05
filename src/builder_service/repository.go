@@ -126,7 +126,7 @@ func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
 }
 
 func (r *BuildRepositoryImpl) GetBuildStatus(key string) (Status, error) {
-	rows, err := r.Query("SELECT status FROM build WHERE `key`=", key)
+	rows, err := r.Query("SELECT status FROM build WHERE `key`=?", key)
 	if err != nil {
 		return "", errors.Wrap(err, "SQL SELECT query failed")
 	}
@@ -156,7 +156,7 @@ func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
 		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
 
-	rows, err = r.Query("SELECT status, tests_passed, tests_total, exception, build_log FROM report WHERE `build_id`=?", buildID)
+	rows, err = r.Query("SELECT tests_passed, tests_total, exception, build_log FROM report WHERE `build_id`=?", buildID)
 	if err != nil {
 		return nil, errors.Wrap(err, "SQL SELECT query failed")
 	}
@@ -167,7 +167,7 @@ func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
 	var report BuildReport
 	report.Key = key
 	report.Status = status
-	err = rows.Scan(&report.Status, &report.TestsPassed, &report.TestsTotal, &report.Exception, &report.BuildLog)
+	err = rows.Scan(&report.TestsPassed, &report.TestsTotal, &report.Exception, &report.BuildLog)
 	if err != nil {
 		return nil, errors.Wrap(err, "scan SQL result failed")
 	}
