@@ -113,8 +113,8 @@ func newRouter(connector DatabaseConnector) *mux.Router {
 					"url":    r.RequestURI,
 				}
 				logrus.WithFields(fields).Error("request failure")
-				io.WriteString(w, err.Error())
 				w.WriteHeader(http.StatusInternalServerError)
+				io.WriteString(w, err.Error())
 			} else {
 				w.WriteHeader(http.StatusOK)
 			}
