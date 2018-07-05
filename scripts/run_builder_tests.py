@@ -54,7 +54,7 @@ class RegisterBuildScenario:
         request = {
             'uuid': uuid,
             'assignment_uuid': self.assignment_uuid,
-            'input': '1+2\n',
+            'input': '1\n2\n',
             'expected': '3\n',
         }
         response = self.json_api_post('testcase/new', request)
