@@ -7,75 +7,72 @@ class Main extends basehandler.BaseHandler
 {
     /**
      * @param {context.Context} context
+     * @param {Request} request
+     * @param {Response} response
      */
-    constructor(context)
+    constructor(context, request, response)
     {
-        super(context);
+        super(context, request, response);
     }
 
-    async index(request, response) 
+    async index() 
     {
-        const checked = await this._checkAuth(request, response)
+        const checked = await this._checkAuth()
         if (checked)
         {
-            return this._redirectAuthorized(request, response);
+            return this._redirectAuthorized();
         }
     }
 
-    async login(request, response)
+    async login()
     {
-        if (request.method != 'POST')
+        if (this.request.method != 'POST')
         {
-            if (this._hasAuth(request, response))
+            if (this._hasAuth(this.request))
             {
-                this._redirectAuthorized(request, response);
+                this._redirectAuthorized(this.request);
             }
             else
             {
-                return this._render('./tpl/login.ejs', { loginFailed: false }, response);
+                return this._render('./tpl/login.ejs', { loginFailed: false });
             }
         }
         else
         {
-            const username = request.body['username'];
-            const rawPassword = request.body['password'];
+            const username = this.request.body['username'];
+            const rawPassword = this.request.body['password'];
             const passwordHash = password.hashPassword(rawPassword);
 
-            // TODO: do not compare with rawPassword - it's unsafe.
-            this._initRepository();
-            const info = await this._repository.getUserAuthInfo(username);
+            // TODO: do not compare with rawPassword - it's unsafe. Implement users registration.
+            const info = await this.repository.getUserAuthInfo(username);
             if (info != null && (info['password'] == rawPassword || info['password'] == passwordHash))
             {
-                this._initSession(request);
-                this._session.authorized = true;
-                this._session.username = username;
-                return this._redirectAuthorized(request, response);
+                this.session.authorized = true;
+                this.session.username = username;
+                return this._redirectAuthorized();
             }
             else
             {
-                return this._render('./tpl/login.ejs', { loginFailed: true }, response);
+                return this._render('./tpl/login.ejs', { loginFailed: true });
             }
         }
     }
 
-    async _redirectAuthorized(request, response)
+    async _redirectAuthorized()
     {
-        this._initSession(request);
-        this._initRepository();
-
-        const info = await this._repository.getUserAuthInfo(this._session.username);
+        const info = await this.repository.getUserAuthInfo(this.session.username);
         const roles = '' + info['roles'];
         if (roles.indexOf(repository.ROLE_ADMIN) >= 0)
         {
-            return this._redirect(routes.ADMIN_HOME_URL, response);
+            return this._redirect(routes.ADMIN_HOME_URL);
         }
         else if (roles.indexOf(repository.ROLE_JUDGE) >= 0)
         {
-            return this._redirect(routes.JUDGE_HOME_URL, response);
+            return this._redirect(routes.JUDGE_HOME_URL);
         }
         else if (roles.indexOf(repository.ROLE_STUDENT) >= 0)
         {
-            return this._redirect(routes.STUDENT_HOME_URL, response);
+            return this._redirect(routes.STUDENT_HOME_URL);
         }
         else
         {

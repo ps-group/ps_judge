@@ -1,7 +1,6 @@
 const util = require('util');
 const ejs = require('ejs');
 const routes = require('../routes');
-const appsession = require('../data/appsession');
 const assert = require('assert');
 
 const renderFileAsync = util.promisify(ejs.renderFile);
@@ -10,35 +9,42 @@ class BaseHandler
 {
     /**
      * @param {context.Context} context
+     * @param {Request} request
+     * @param {Response} response
      */
-    constructor(context)
+    constructor(context, request, response)
     {
+        /**
+         * @property {context.Context}
+         */
         this._context = context;
+        /**
+         * @property {http.Request}
+         */
+        this._request = request;
+        /**
+         * @property {http.Response}
+         */
+        this._response = response;
         /**
          * @property {repository.FrontendRepository}
          */
         this._repository = null;
-        /**
-         * @property {appsession.AppSession}
-         */
-        this._session = null;
     }
 
     /**
      * Renders HTML page
-     * @param {*} tplPath - path to template which should be rendered
+     * @param {string} tplPath - path to template which should be rendered
      * @param {Object} data - key/value mapping for page data
-     * @param {*} response - server response object
      */
-    async _render(tplPath, data, response)
+    async _render(tplPath, data)
     {
         assert(data !== undefined);
-        assert(response !== undefined);
 
         const html = await renderFileAsync(tplPath, data);
-        response.writeHead(200, {'Content-Type': 'text/html'});
-        response.write(html);
-        response.end();
+        this._response.writeHead(200, {'Content-Type': 'text/html'});
+        this._response.write(html);
+        this._response.end();
     }
 
     /**
@@ -46,60 +52,68 @@ class BaseHandler
      * @param {string} url - URL which should be opened instead of current URL.
      * @param {*} response - server response object
      */
-    async _redirect(url, response)
+    async _redirect(url)
     {
-        response.writeHead(301, { 'Location': url, 'Cache-Control': 'no-store' });
-        response.end();
+        this._response.writeHead(301, { 'Location': url, 'Cache-Control': 'no-store' });
+        this._response.end();
     }
 
     /**
      * Returns true if user authorized
-     * @param {*} request - client request object
-     * @param {*} response - server response object
      */
-    _hasAuth(request)
+    _hasAuth()
     {
-        this._initSession(request);
-        return this._session.authorized;
+        return this.session.authorized;
     }
 
     /**
      * Checks if user authorized and redirects to login page if
-     * @param {*} request - client request object
-     * @param {*} response - server response object
      */
-    async _checkAuth(request, response)
+    async _checkAuth()
     {
-        if (!this._hasAuth(request))
+        if (!this._hasAuth())
         {
-            await this._redirect(routes.LOGIN_URL, response);
+            await this._redirect(routes.LOGIN_URL);
             return false;
         }
         return true;
     }
 
     /**
-     * Initializes user session lazily
+     * @returns {Request}
      */
-    _initSession(request)
+    get request()
     {
-        if (!this._session)
-        {
-            this._session = new appsession.AppSession(request);
-        }
-        assert(this._session);
+        return this._request;
+    }
+
+    /**
+     * @returns {Response}
+     */
+    get response()
+    {
+        return this._response;
+    }
+
+    /**
+     * Returns user session object.
+     */
+    get session()
+    {
+        return this._request.session;
     }
 
     /**
      * Initializes repository lazily.
      */
-    _initRepository()
+    get repository()
     {
         if (!this._repository)
         {
             this._repository = this._context.connectDB();
         }
         assert(this._repository);
+        return this._repository;
     }
 }
 

@@ -9,36 +9,38 @@ class Student extends basehandler.BaseHandler
 {
     /**
      * @param {context.Context} context
+     * @param {Request} request
+     * @param {Response} response
      */
-    constructor(context)
+    constructor(context, request, response)
     {
-        super(context);
+        super(context, request, response);
     }
 
-    async home(request, response) 
+    async home() 
     {
-        const userInfo = await this._fetchUser(request, response);
+        const userInfo = await this._fetchUser();
         if (userInfo != null)
         {
             const contestId = userInfo['active_contest_id'];
-            const assignments = await this._repository.getAssignmentsBriefInfo(contestId);
+            const assignments = await this.repository.getAssignmentsBriefInfo(contestId);
             const options = {
                 'page': {
                     'assignments': assignments
                 }
             };
-            return this._render('./tpl/student_home.ejs', options, response);
+            return this._render('./tpl/student_home.ejs', options);
         }
     }
 
-    async assignment(request, response) 
+    async assignment() 
     {
-        const userInfo = await this._fetchUser(request, response);
+        const userInfo = await this._fetchUser();
         if (userInfo != null)
         {
-            const query = url.parse(request.url, true).query;
+            const query = url.parse(this.request.url, true).query;
             const assignmentId = parseInt(query.id);
-            const assignment = await this._repository.getAssignmentInfo(assignmentId);
+            const assignment = await this.repository.getAssignmentInfo(assignmentId);
 
             // TODO: we can speedup markdown convertion by moving it to client side.
             const articleHtml = this._convertMarkdown(assignment.article);
@@ -49,32 +51,31 @@ class Student extends basehandler.BaseHandler
                     'assignment_info': articleHtml
                 }
             };
-            return this._render('./tpl/student_assignment.ejs', options, response);
+            return this._render('./tpl/student_assignment.ejs', options);
         }
     }
 
-    async commit(request, response) 
+    async commit() 
     {
-        const userInfo = await this._fetchUser(request, response);
+        const userInfo = await this._fetchUser();
         if (userInfo)
         {
-            const assignmentId = request.body.assignmentId;
-            const source = request.body.source;
+            const assignmentId = this.request.body.assignmentId;
+            const source = this.request.body.source;
             const uuid = uuidv1().split('-').join('');
             assert(source);
             assert(assignmentId);
             assert(uuid);
 
-            this._initRepository();
-            let solutionInfo = await this._repository.getSolutionInfo(userInfo.id, assignmentId);
+            let solutionInfo = await this.repository.getSolutionInfo(userInfo.id, assignmentId);
             if (solutionInfo == null)
             {
-                await this._repository.createSolution(userInfo.id, assignmentId);
-                solutionInfo = await this._repository.getSolutionInfo(userInfo.id, assignmentId);
+                await this.repository.createSolution(userInfo.id, assignmentId);
+                solutionInfo = await this.repository.getSolutionInfo(userInfo.id, assignmentId);
             }
 
-            await this._repository.createCommit(solutionInfo.id, uuid, source);
-            await this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id, response);
+            await this.repository.createCommit(solutionInfo.id, uuid, source);
+            await this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id);
         }
     }
 
@@ -84,14 +85,12 @@ class Student extends basehandler.BaseHandler
         return converter.makeHtml(markdown);
     }
 
-    async _fetchUser(request, response)
+    async _fetchUser()
     {
-        const checked = await this._checkAuth(request, response)
+        const checked = await this._checkAuth()
         if (checked)
         {
-            this._initSession();
-            this._initRepository();
-            return this._repository.getUserAuthInfo(this._session.username);
+            return this.repository.getUserAuthInfo(this.session.username);
         }
         return null;
     }

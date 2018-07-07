@@ -9,7 +9,6 @@ const fs = require('fs');
 const util = require('util');
 const routes = require('./routes');
 const Router = require('./router');
-const mime = require('mime-types');
 const appcontext = require('./appcontext');
 const config = require('./config')
 
@@ -82,8 +81,8 @@ class Server
         try
         {
             const handlerClass = require('./handlers/' + route.handler);
-            const hanler = new handlerClass(this.context);
-            await hanler[route.action](request, response);
+            const hanler = new handlerClass(this.context, request, response);
+            await hanler[route.action]();
         }
         catch (err)
         {
