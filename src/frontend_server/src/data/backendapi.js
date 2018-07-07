@@ -122,7 +122,6 @@ class BackendApi
      */
     _sendPost(method, payload)
     {
-        console.log(`called _sendPost with method=${method}, payload=${payload}`);
         return new Promise((resolve, reject) => {
             assert(typeof(payload) == 'object');
             const data = JSON.stringify(payload);

@@ -1,0 +1,22 @@
+<%- include('layout/head', {title: page.title}) %>
+<div class="container">
+    <table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Задача</th>
+            <th scope="col">Баллы</th>
+            <th scope="col">Статус</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% for (let solution of page.solutions) { %>
+        <tr>
+            <td><a href="/student/assignment?id=<%=solution.assignment_id%>"><%=solution.assignment_title%></a></td>
+            <td><%=solution.score%></td>
+            <td><a href="/student/commit?id=<%=solution.commit_id%>"><%=solution.build_status%></a></td>
+        </tr>
+        <% } %>
+    </tbody>
+    </table>
+</div>
+<%- include('layout/tail') %>

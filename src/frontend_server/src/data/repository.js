@@ -159,7 +159,7 @@ class FrontendRepository
      */
     async getSolutionInfo(userId, assignmentId)
     {
-        const sql = 'SELECT id, score FROM solution WHERE user_id=? AND assignment_id=?';
+        const sql = 'SELECT id, score FROM solution WHERE user_id=? AND assignment_id=? LIMIT 1';
         const infos = await this.connector.query(sql, [userId, assignmentId]);
         if (infos.length == 0)
         {
@@ -167,6 +167,33 @@ class FrontendRepository
         }
         assert(infos.length == 1);
         return infos[0];
+    }
+
+    /**
+     * Returns information for the last commit for given solution.
+     * @param {number} solutionId - solution id
+     */
+    async getLastCommitInfo(solutionId)
+    {
+        const sql = 'SELECT id, build_status, build_score FROM commit WHERE solution_id=? ORDER BY `id` DESC LIMIT 1';
+        const infos = await this.connector.query(sql, [solutionId]);
+        if (infos.length == 0)
+        {
+            return null;
+        }
+        assert(infos.length == 1);
+        return infos[0];
+    }
+
+    /**
+     * Returns list of user solutions
+     * @param {number} userId - user which made solutions
+     */
+    async getUserSolutions(userId)
+    {
+        const sql = 'SELECT id, assignment_id, score FROM solution WHERE user_id=?';
+        const infos = await this.connector.query(sql, [userId]);
+        return infos;
     }
 }
 

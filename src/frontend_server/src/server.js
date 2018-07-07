@@ -84,11 +84,33 @@ class Server
             const hanler = new handlerClass(this.context, request, response);
             await hanler[route.action]();
         }
-        catch (err)
+        catch (error)
         {
-            console.error(`internal error when handling '${request.url}': ${err}`);
+            const reason = this._prettyPrintError(error);
+            console.error(`internal error when handling '${request.url}': ${reason}`);
             response.writeHead(500);
             response.end();
+        }
+    }
+
+    _prettyPrintError(error)
+    {
+        try
+        {
+            if (typeof(error) == 'object')
+            {
+                const stack = error.stack || '';
+                if (stack !== '')
+                {
+                    return stack;
+                }
+                return error.message || '';
+            }
+            return '' + error
+        }
+        catch (nextError)
+        {
+            return `failed to print error (${nextError})`
         }
     }
 }

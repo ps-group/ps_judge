@@ -39,7 +39,7 @@ class Student extends basehandler.BaseHandler
         if (userInfo != null)
         {
             const query = url.parse(this.request.url, true).query;
-            const assignmentId = parseInt(query.id);
+            const assignmentId = parseInt(query["id"]);
             const assignment = await this.repository.getAssignmentFullInfo(assignmentId);
 
             const articleHtml = this._convertMarkdown(assignment.article);
@@ -51,6 +51,45 @@ class Student extends basehandler.BaseHandler
                 }
             };
             return this._render('./tpl/student_assignment.ejs', options);
+        }
+    }
+
+    async solutions()
+    {
+        const userInfo = await this._fetchUser();
+        if (userInfo != null)
+        {
+            const contestId = userInfo['active_contest_id'];
+            const solutions = await this.repository.getUserSolutions(userInfo.id);
+            const assignments = await this.repository.getAssignmentsBriefInfo(contestId);
+            const assignmentTitles = {};
+            for (let assignment of assignments)
+            {
+                assignmentTitles[assignment['id']] = assignment['title'];
+            }
+
+            const infos = [];
+            for (let solution of solutions)
+            {
+                const solutionId = solution['id'];
+                const assignmentId = solution['assignment_id'];
+                const commitInfo = await this.repository.getLastCommitInfo(solutionId);
+                const info = {
+                    'assignment_id': assignmentId,
+                    'assignment_title': assignmentTitles[assignmentId],
+                    'score': solution['score'],
+                    'commit_id': commitInfo['id'],
+                    'build_status': commitInfo['build_status'],
+                };
+                infos.push(info);
+            }
+
+            const options = {
+                'page': {
+                    'solutions': infos
+                }
+            };
+            return this._render('./tpl/student_solutions.ejs', options);
         }
     }
 
@@ -73,11 +112,11 @@ class Student extends basehandler.BaseHandler
                 await this.repository.createSolution(userInfo.id, assignmentId);
                 solutionInfo = await this.repository.getSolutionInfo(userInfo.id, assignmentId);
             }
-            const assignmentInfo = this.repository.getAssignmentFullInfo(assignmentId);
+            const assignmentInfo = await this.repository.getAssignmentFullInfo(assignmentId);
 
             await this.repository.createCommit(solutionInfo.id, uuid);
             await this.backendApi.registerNewBuild(uuid, assignmentInfo.uuid, language, source);
-            await this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id);
+            await this._redirect(routes.STUDENT_SOLUTIONS_URL);
         }
     }
 
