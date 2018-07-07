@@ -1,5 +1,3 @@
-const util = require('util');
-const ejs = require('ejs');
 const url = require('url');
 const basehandler = require('./basehandler');
 const showdown  = require('showdown');
