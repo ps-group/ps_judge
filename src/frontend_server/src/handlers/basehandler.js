@@ -68,7 +68,7 @@ class BaseHandler
      * @param {*} request - client request object
      * @param {*} response - server response object
      */
-    _checkAuth(request, response)
+    async _checkAuth(request, response)
     {
         if (!this._hasAuth(request))
         {

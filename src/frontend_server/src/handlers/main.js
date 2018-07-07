@@ -19,7 +19,8 @@ class Main extends basehandler.BaseHandler
 
     async index(request, response) 
     {
-        if (this._checkAuth(request, response))
+        const checked = await this._checkAuth(request, response)
+        if (checked)
         {
             return this._redirectAuthorized(request, response);
         }

@@ -86,9 +86,10 @@ class Student extends basehandler.BaseHandler
         return converter.makeHtml(markdown);
     }
 
-    _fetchUser(request, response)
+    async _fetchUser(request, response)
     {
-        if (this._checkAuth(request, response))
+        const checked = await this._checkAuth(request, response)
+        if (checked)
         {
             this._initSession();
             this._initRepository();
