@@ -86,7 +86,7 @@ class Server
         }
         catch (err)
         {
-            console.error('internal error: ', err);
+            console.error(`internal error when handling '${request.url}': ${err}`);
             response.writeHead(500);
             response.end();
         }

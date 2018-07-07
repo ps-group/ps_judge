@@ -40,9 +40,8 @@ class Student extends basehandler.BaseHandler
         {
             const query = url.parse(this.request.url, true).query;
             const assignmentId = parseInt(query.id);
-            const assignment = await this.repository.getAssignmentInfo(assignmentId);
+            const assignment = await this.repository.getAssignmentFullInfo(assignmentId);
 
-            // TODO: we can speedup markdown convertion by moving it to client side.
             const articleHtml = this._convertMarkdown(assignment.article);
             const options = {
                 'page': {
@@ -61,8 +60,9 @@ class Student extends basehandler.BaseHandler
         if (userInfo)
         {
             const assignmentId = this.request.body.assignmentId;
+            const language = this._validateLanguage(this.request.body.language);
             const source = this.request.body.source;
-            const uuid = uuidv1().split('-').join('');
+            const uuid = this._create_uuid();
             assert(source);
             assert(assignmentId);
             assert(uuid);
@@ -73,10 +73,27 @@ class Student extends basehandler.BaseHandler
                 await this.repository.createSolution(userInfo.id, assignmentId);
                 solutionInfo = await this.repository.getSolutionInfo(userInfo.id, assignmentId);
             }
+            const assignmentInfo = this.repository.getAssignmentFullInfo(assignmentId);
 
-            await this.repository.createCommit(solutionInfo.id, uuid, source);
+            await this.repository.createCommit(solutionInfo.id, uuid);
+            await this.backendApi.registerNewBuild(uuid, assignmentInfo.uuid, language, source);
             await this._redirect(routes.STUDENT_SOLUTION_URL + '?id=' + solutionInfo.id);
         }
+    }
+
+    /**
+     * Returns if language valid or throws
+     * @param {string} language - language enumeration string
+     * @returns {string} returned string is the same as the language param
+     */
+    _validateLanguage(language)
+    {
+        const languages = ['c++', 'pascal'];
+        if (languages.includes(language))
+        {
+            return language;
+        }
+        throw new Error(`unknown language: ${language}`);
     }
 
     _convertMarkdown(markdown)
@@ -93,6 +110,14 @@ class Student extends basehandler.BaseHandler
             return this.repository.getUserAuthInfo(this.session.username);
         }
         return null;
+    }
+
+    /**
+     * @returns {string} new uuid
+     */
+    _create_uuid()
+    {
+        return uuidv1().split('-').join('');
     }
 }
 

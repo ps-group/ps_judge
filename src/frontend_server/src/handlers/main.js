@@ -43,9 +43,8 @@ class Main extends basehandler.BaseHandler
             const rawPassword = this.request.body['password'];
             const passwordHash = password.hashPassword(rawPassword);
 
-            // TODO: do not compare with rawPassword - it's unsafe. Implement users registration.
             const info = await this.repository.getUserAuthInfo(username);
-            if (info != null && (info['password'] == rawPassword || info['password'] == passwordHash))
+            if (info != null && (info['password'] == passwordHash))
             {
                 this.session.authorized = true;
                 this.session.username = username;

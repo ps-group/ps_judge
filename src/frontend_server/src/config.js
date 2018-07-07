@@ -12,6 +12,7 @@ class Config
         this.dbPassword = dbAuth["password"];
 
         this.port = jsonObject["port"];
+        this.backendPort = jsonObject["backend_port"];
     }
 }
 

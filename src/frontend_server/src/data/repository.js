@@ -56,13 +56,14 @@ class FrontendRepository
     /**
      * Creates new assignment in given contest.
      * @param {number} contestId - database id of assignment contest
+     * @param {string} uuid - unique id of assignment, 32 characters
      * @param {string} title - short title
      * @param {string} article - article text in Markdown format
      */
-    async createAssignment(contestId, title, article)
+    async createAssignment(contestId, uuid, title, article)
     {
-        const sql = 'INSERT INTO assignment (contest_id, title, article) VALUES (?, ?, ?)';
-        await this.connector.query(sql, [contestId, title, article]);
+        const sql = 'INSERT INTO assignment (contest_id, uuid, title, article) VALUES (?, ?, ?, ?)';
+        await this.connector.query(sql, [contestId, uuid, title, article]);
     }
 
     /**
@@ -81,12 +82,11 @@ class FrontendRepository
      * Creates new solution source code commit
      * @param {number} solutionId - database id of commit solution
      * @param {string} uuid - global unique identifier of given commit
-     * @param {string} source - commit source code
      */
-    async createCommit(solutionId, uuid, source)
+    async createCommit(solutionId, uuid)
     {
-        const sql = 'INSERT INTO commit (solution_id, uuid, source) VALUES (?, ?, ?)';
-        await this.connector.query(sql, [solutionId, uuid, source]);
+        const sql = 'INSERT INTO commit (solution_id, uuid) VALUES (?, ?)';
+        await this.connector.query(sql, [solutionId, uuid]);
     }
 
     /**
@@ -125,9 +125,9 @@ class FrontendRepository
      * Return full information about assignment.
      * @param {*} assignmentId - database id of the assignment
      */
-    async getAssignmentInfo(assignmentId)
+    async getAssignmentFullInfo(assignmentId)
     {
-        const sql = 'SELECT id, title, article FROM assignment WHERE id = ?';
+        const sql = 'SELECT id, uuid, title, article FROM assignment WHERE id = ?';
         const infos = await this.connector.query(sql, [assignmentId]);
         if (infos.length == 0)
         {

@@ -2,6 +2,7 @@ const util = require('util');
 const ejs = require('ejs');
 const routes = require('../routes');
 const assert = require('assert');
+const backendapi = require('../data/backendapi');
 
 const renderFileAsync = util.promisify(ejs.renderFile);
 
@@ -30,6 +31,10 @@ class BaseHandler
          * @property {repository.FrontendRepository}
          */
         this._repository = null;
+        /**
+         * @property {backendapi.BackendApi}
+         */
+        this._backendApi = null;
     }
 
     /**
@@ -104,7 +109,20 @@ class BaseHandler
     }
 
     /**
+     * @returns {backendapi.BackendApi}
+     */
+    get backendApi()
+    {
+        if (!this._backendApi)
+        {
+            this._backendApi = new backendapi.BackendApi(this._context.config);
+        }
+        return this._backendApi;
+    }
+
+    /**
      * Initializes repository lazily.
+     * @returns {repository.FrontendRepository}
      */
     get repository()
     {
