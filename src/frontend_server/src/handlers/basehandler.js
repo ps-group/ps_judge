@@ -85,6 +85,19 @@ class BaseHandler
     }
 
     /**
+     * Fetches current user info or returns null if user is not authorized.
+     */
+    async _fetchUser()
+    {
+        const checked = await this._checkAuth()
+        if (checked)
+        {
+            return this.repository.getUserAuthInfo(this.session.username);
+        }
+        return null;
+    }
+
+    /**
      * @returns {Request}
      */
     get request()

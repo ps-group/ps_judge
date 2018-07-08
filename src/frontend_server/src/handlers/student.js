@@ -4,6 +4,7 @@ const showdown  = require('showdown');
 const uuidv1 = require('uuid/v1');
 const assert = require('assert');
 const routes = require('../routes');
+const repository = require('../data/repository');
 
 class Student extends basehandler.BaseHandler
 {
@@ -19,7 +20,7 @@ class Student extends basehandler.BaseHandler
 
     async home() 
     {
-        const userInfo = await this._fetchUser();
+        const userInfo = await this._fetchStudentUser();
         if (userInfo != null)
         {
             const contestId = userInfo['active_contest_id'];
@@ -35,7 +36,7 @@ class Student extends basehandler.BaseHandler
 
     async assignment() 
     {
-        const userInfo = await this._fetchUser();
+        const userInfo = await this._fetchStudentUser();
         if (userInfo != null)
         {
             const query = url.parse(this.request.url, true).query;
@@ -56,7 +57,7 @@ class Student extends basehandler.BaseHandler
 
     async solutions()
     {
-        const userInfo = await this._fetchUser();
+        const userInfo = await this._fetchStudentUser();
         if (userInfo != null)
         {
             const contestId = userInfo['active_contest_id'];
@@ -95,7 +96,7 @@ class Student extends basehandler.BaseHandler
 
     async commit() 
     {
-        const userInfo = await this._fetchUser();
+        const userInfo = await this._fetchStudentUser();
         if (userInfo)
         {
             const assignmentId = this.request.body.assignmentId;
@@ -141,22 +142,30 @@ class Student extends basehandler.BaseHandler
         return converter.makeHtml(markdown);
     }
 
-    async _fetchUser()
-    {
-        const checked = await this._checkAuth()
-        if (checked)
-        {
-            return this.repository.getUserAuthInfo(this.session.username);
-        }
-        return null;
-    }
-
     /**
      * @returns {string} new uuid
      */
     _create_uuid()
     {
         return uuidv1().split('-').join('');
+    }
+
+    /**
+     * Fetches current user info and ensures it has student role.
+     * Returns null if user is not authorized.
+     */
+    async _fetchStudentUser()
+    {
+        const userInfo = await this._fetchUser();
+        if (userInfo)
+        {
+            const roles = '' + userInfo['roles'];
+            if (roles.indexOf(repository.ROLE_STUDENT) < 0)
+            {
+                throw new Error('user has no privilegies to view this page');
+            }
+        }
+        return userInfo;
     }
 }
 

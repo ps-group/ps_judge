@@ -1,5 +1,6 @@
 <%- include('layout/head', {title: page.title}) %>
 <div class="container">
+  <%- include('layout/student_navbar') %>
   <article>
     <h1><%= page.title %></h1>
     <%- page.assignment_info %>
@@ -11,7 +12,7 @@
       <span>Как только составите решение, скопируйте его исходный код, укажите язык и нажмите "Отправить"</span>
     </div>
     <div class="form-group">
-      <textarea class="text-monospace" name="source" cols="60" rows="16" wrap="soft"></textarea>
+      <textarea class="text-monospace" name="source" cols="60" rows="10" wrap="soft"></textarea>
     </div>
     <h4>Укажите язык программирования</h4>
     <div class="form-group">

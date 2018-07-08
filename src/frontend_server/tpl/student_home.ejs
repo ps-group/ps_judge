@@ -1,5 +1,6 @@
 <%- include('layout/head', {title: 'Задачи'}) %>
 <div class="container">
+  <%- include('layout/student_navbar') %>
   <h2>Список заданий</h2>
   <ol>
   <% for (let assignment of page.assignments) { %>
