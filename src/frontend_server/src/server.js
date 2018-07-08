@@ -10,7 +10,9 @@ const util = require('util');
 const routes = require('./routes');
 const Router = require('./router');
 const appcontext = require('./appcontext');
-const config = require('./config')
+const config = require('./config');
+const messagerouter = require('./data/messagerouter.js');
+const buildlistener = require('./listeners/buildlistener.js');
 
 const SESSION_SECRET = '7pv0OvUy';
 
@@ -28,6 +30,13 @@ class Server
         this.createServer({
             "port": this.config.port,
             "routes": routes.ROUTES
+        });
+        this.messageRouter = new messagerouter.MessageRouter();
+        this.buildListener = new buildlistener.BuildListener(this.context);
+        this.messageRouter.consumeBuildFinished((info) => {
+            const uuid = String(info['key']);
+            const succeed = Boolean(info['succeed']);
+            this.buildListener.onBuildFinished(uuid, succeed);
         });
     }
 

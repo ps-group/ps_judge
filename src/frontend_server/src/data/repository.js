@@ -186,6 +186,22 @@ class FrontendRepository
     }
 
     /**
+     * Returns information for the commit with given uuid.
+     * @param {number} uuid - uuid of commit
+     */
+    async getCommitInfo(uuid)
+    {
+        const sql = 'SELECT id, solution_id, build_status, build_score FROM commit WHERE uuid=?';
+        const infos = await this.connector.query(sql, [uuid]);
+        if (infos.length == 0)
+        {
+            return null;
+        }
+        assert(infos.length == 1);
+        return infos[0];
+    }
+
+    /**
      * Returns list of user solutions
      * @param {number} userId - user which made solutions
      */
@@ -194,6 +210,30 @@ class FrontendRepository
         const sql = 'SELECT id, assignment_id, score FROM solution WHERE user_id=?';
         const infos = await this.connector.query(sql, [userId]);
         return infos;
+    }
+
+    /**
+     * Updates commit after build finished.
+     * @param {string} uuid - uuid of commit
+     * @param {boolean} succeed - true if build succeed
+     * @param {number} buildScore - score of build
+     */
+    async updateCommit(uuid, succeed, buildScore)
+    {
+        const sql = 'UPDATE commit SET build_status=?, build_score=? WHERE `uuid`=?';
+        const buildStatus = succeed ? 'succeed' : 'failed';
+        await this.connector.query(sql, [buildStatus, buildScore, uuid]);
+    }
+
+    /**
+     * Updates solution after build finished.
+     * @param {number} id - integer id of the solution
+     * @param {number} score - total score of solution
+     */
+    async updateSolution(id, score)
+    {
+        const sql = 'UPDATE solution SET score=? WHERE `id`=?';
+        await this.connector.query(sql, [score, id]);
     }
 }
 

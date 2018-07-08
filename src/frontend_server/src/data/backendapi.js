@@ -3,6 +3,17 @@ const util = require('util');
 const url = require('url');
 const assert = require('assert');
 
+/**
+ * @typedef {Object} BuildReport
+ * @property {string} uuid
+ * @property {string} status - either 'succeed' or 'failed'
+ * @property {string} exception
+ * @property {string} build_log
+ * @property {string} tests_log
+ * @property {number} tests_passed
+ * @property {number} tests_total
+ */
+
 class BackendApi
 {
     /**
@@ -33,7 +44,7 @@ class BackendApi
         }
         const response = await this._sendPost('build/new', params);
         assert(uuid == String(response['uuid']));
-        console.log('BackendApi: registered build with uuid ' + uuid);
+        console.log('BackendApi: registered build ' + uuid);
 
         return uuid;
     }
@@ -75,7 +86,7 @@ class BackendApi
     /**
      * Queries finished build report, throws if build is not finished.
      * @param {string} uuid - build UUID
-     * @returns Object - build report object
+     * @returns {Promise<BuildReport>} - build report object
      */
     async getBuildReport(uuid)
     {
@@ -100,11 +111,20 @@ class BackendApi
                 try
                 {
                     if (response.statusCode != 200) {
-                        throw new Error(`backend api call '${method}' returns ${res.statusCode}`);
+                        throw new Error(`backend api GET '${method}' returns ${response.statusCode}`);
                     }
-                    const json = response.read();
-                    const value = JSON.parse(json);
-                    resolve(value);
+                    response.setEncoding('utf8');
+                    response.on('data', function (chunk) {
+                        try
+                        {
+                            const value = JSON.parse(chunk);
+                            resolve(value);
+                        }
+                        catch (error)
+                        {
+                            reject(error);
+                        }
+                    });
                 }
                 catch (error)
                 {
@@ -138,7 +158,7 @@ class BackendApi
                 try
                 {
                     if (response.statusCode != 200) {
-                        throw new Error(`backend api call '${method}' returns ${res.statusCode}`);
+                        throw new Error(`backend api POST '${method}' returns ${response.statusCode}`);
                     }
                     response.setEncoding('utf8');
                     response.on('data', function (chunk) {
