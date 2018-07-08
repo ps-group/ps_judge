@@ -8,11 +8,11 @@ import (
 
 const (
 	RabbitMQSocket        = "amqp://guest:guest@localhost:5672/"
-	ExchangeBuildFinished = "build-finished"
+	ExchangeBuildFinished = "psjudge-build-finished"
 )
 
 type BuildFinishedEvent struct {
-	Key     string `json:key`
+	Key     string `json:"key"`
 	Succeed bool   `json:"succeed"`
 }
 
