@@ -1,13 +1,13 @@
 package main
 
 import (
-	"context"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+
+	"ps-group/restapi"
 )
 
 func main() {
@@ -17,19 +17,27 @@ func main() {
 	}
 
 	databaseConnector := NewMySQLConnector(config)
-	master := NewBuildMaster(databaseConnector)
-	killChan := getKillSignalChan()
+	messageRouterFactory := NewMessageRouterFactory(config.AmqpSocket)
+	context := &apiContext{databaseConnector}
 
-	logFile := openFileLogger(config.LogFileName)
-	defer logFile.Close()
-	server := startServer(databaseConnector, config.ServerURL)
+	master := NewBuildMaster(databaseConnector, messageRouterFactory)
+	killChan := getKillSignalChan()
+	service := restapi.NewService(restapi.ServiceConfig{
+		g_routes,
+		config.ServerURL,
+		config.LogFileName,
+		context,
+	})
+	defer service.Shutdown()
+
+	// Start services
+	service.Start()
 	master.RunWorkerPool()
 
 	// Wait for SIGTERM
 	waitForKillSignal(killChan)
 
-	server.Shutdown(context.Background())
-	master.Close()
+	master.Shutdown()
 }
 
 func getKillSignalChan() chan os.Signal {
@@ -46,14 +54,4 @@ func waitForKillSignal(killChan <-chan os.Signal) {
 	case syscall.SIGTERM:
 		logrus.Info("got SIGTERM, shutting down...")
 	}
-}
-
-func startServer(connector DatabaseConnector, serverURL string) *http.Server {
-	logrus.WithFields(logrus.Fields{"url": serverURL}).Info("starting server")
-	server := &http.Server{Addr: serverURL, Handler: newRouter(connector)}
-	go func() {
-		logrus.Fatal(server.ListenAndServe())
-	}()
-
-	return server
 }

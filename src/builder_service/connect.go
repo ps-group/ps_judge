@@ -7,18 +7,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// DatabaseConnector - creates SQL database connection
 type DatabaseConnector interface {
 	Connect() (*sql.DB, error)
 }
 
-type MySQLConnector struct {
+type mySQLConnector struct {
 	User         string
 	Password     string
 	Host         string
 	DatabaseName string
 }
 
-func (c *MySQLConnector) Connect() (*sql.DB, error) {
+func (c *mySQLConnector) Connect() (*sql.DB, error) {
 	params := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", c.User, c.Password, c.Host, c.DatabaseName)
 	db, err := sql.Open("mysql", params)
 	if err != nil {

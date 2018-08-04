@@ -7,32 +7,38 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// BuildMaster - reads build tasks from database and passes them to the workers.
 type BuildMaster struct {
-	reports          chan BuildReport
-	stopWorkers      chan struct{}
-	stopListening    chan struct{}
-	workersWaitGroup *sync.WaitGroup
-	generator        TaskGenerator
-	dbConnector      DatabaseConnector
+	reports              chan BuildReport
+	stopWorkers          chan struct{}
+	stopListening        chan struct{}
+	workersWaitGroup     *sync.WaitGroup
+	generator            TaskGenerator
+	dbConnector          DatabaseConnector
+	messageRouterFactory MessageRouterFactory
 }
 
-func NewBuildMaster(dbConnector DatabaseConnector) *BuildMaster {
+// NewBuildMaster - creates build master with given database
+func NewBuildMaster(dbConnector DatabaseConnector, messageRouterFactory MessageRouterFactory) *BuildMaster {
 	var master BuildMaster
 	master.reports = make(chan BuildReport)
 	master.stopWorkers = make(chan struct{})
 	master.stopListening = make(chan struct{})
 	master.generator = newBuildTaskGenerator(dbConnector, master.reports)
 	master.dbConnector = dbConnector
+	master.messageRouterFactory = messageRouterFactory
 
 	return &master
 }
 
+// RunWorkerPool - runs workers that accept tasks
 func (master *BuildMaster) RunWorkerPool() {
 	master.workersWaitGroup = RunWorkerPool(master.generator, master.stopWorkers)
 	go master.listenBuildReports()
 }
 
-func (master *BuildMaster) Close() {
+// Shutdown - stops all workers and closes channels
+func (master *BuildMaster) Shutdown() {
 	master.stopWorkers <- struct{}{}
 	master.stopListening <- struct{}{}
 	<-master.stopListening
@@ -78,7 +84,7 @@ func (master *BuildMaster) processBuildReport(report BuildReport) error {
 }
 
 func (master *BuildMaster) fireBuildFinished(key string, succeed bool) error {
-	router := NewMessageRouter()
+	router := master.messageRouterFactory.NewMessageRouter()
 	router.DeclareExchange(ExchangeBuildFinished)
 	router.PublishJSON(ExchangeBuildFinished, BuildFinishedEvent{
 		Key:     key,

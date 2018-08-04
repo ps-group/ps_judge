@@ -17,6 +17,7 @@ type Config struct {
 	MySQLPassword string `json:"mysql_password"`
 	MySQLHost     string `json:"mysql_host"`
 	MySQLDB       string `json:"mysql_db"`
+	AmqpSocket    string `json:"amqp_socket"`
 	ServerURL     string `json:"server_url"`
 	LogFileName   string `json:"log_file_name"`
 }
@@ -43,8 +44,9 @@ func ParseConfig() (*Config, error) {
 	return &config, nil
 }
 
+// NewMySQLConnector - creates MySQL database connector
 func NewMySQLConnector(config *Config) DatabaseConnector {
-	var connector MySQLConnector
+	var connector mySQLConnector
 	connector.User = config.MySQLUser
 	connector.Password = config.MySQLPassword
 	connector.Host = config.MySQLHost

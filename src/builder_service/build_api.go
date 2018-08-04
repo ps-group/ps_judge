@@ -1,8 +1,17 @@
 package main
 
 import (
-	"github.com/pkg/errors"
+	"database/sql"
+	"ps-group/restapi"
 )
+
+type apiContext struct {
+	dbConnector DatabaseConnector
+}
+
+func (c *apiContext) ConnectDB() (*sql.DB, error) {
+	return c.dbConnector.Connect()
+}
 
 // BuildStatusResponse - contains build status.
 type BuildStatusResponse struct {
@@ -43,21 +52,23 @@ type RegisterResponse struct {
 	UUID string `json:"uuid"`
 }
 
-func getBuildReport(c APIContext) error {
-	key := c.Vars()["uuid"]
+func getBuildReport(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+
+	key := req.Var("uuid")
 	if len(key) == 0 {
-		return errors.New("missed 'uuid' request parameter")
+		return restapi.NewInternalError("missed 'uuid' request parameter")
 	}
 
 	db, err := c.ConnectDB()
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 	defer db.Close()
 	repo := NewRepository(db)
 	report, err := repo.GetBuildReport(key)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	res := &BuildReportResponse{
@@ -69,50 +80,53 @@ func getBuildReport(c APIContext) error {
 		TestsPassed: report.TestsPassed,
 		TestsTotal:  report.TestsTotal,
 	}
-	return c.WriteJSON(res)
+	return &restapi.Ok{&res}
 }
 
-func getBuildStatus(c APIContext) error {
-	key := c.Vars()["uuid"]
+func getBuildStatus(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+	key := req.Var("uuid")
 	if len(key) == 0 {
-		return errors.New("missed 'uuid' request parameter")
+		return restapi.NewInternalError("missed 'uuid' request parameter")
 	}
 
 	db, err := c.ConnectDB()
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 	defer db.Close()
 	repo := NewRepository(db)
 	status, err := repo.GetBuildStatus(key)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	res := &BuildStatusResponse{
 		UUID:   key,
 		Status: status,
 	}
-	return c.WriteJSON(res)
+	return &restapi.Ok{&res}
 }
 
-func createBuild(c APIContext) error {
+func createBuild(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+
 	var params RegisterBuildRequest
-	err := c.ReadJSON(&params)
+	err := req.ReadJSON(&params)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	db, err := c.ConnectDB()
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 	defer db.Close()
 
 	repo := NewRepository(db)
 	assignmentID, err := repo.GetAssignmentID(params.AssignmentUUID)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	err = repo.RegisterBuild(RegisterBuildParams{
@@ -122,32 +136,34 @@ func createBuild(c APIContext) error {
 		Source:       params.Source,
 	})
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	res := RegisterResponse{
 		UUID: params.UUID,
 	}
-	return c.WriteJSON(res)
+	return &restapi.Ok{&res}
 }
 
-func createTestCase(c APIContext) error {
+func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+
 	var params RegisterTestCaseRequest
-	err := c.ReadJSON(&params)
+	err := req.ReadJSON(&params)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	db, err := c.ConnectDB()
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 	defer db.Close()
 
 	repo := NewRepository(db)
 	assignmentID, err := repo.GetAssignmentID(params.AssignmentUUID)
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	err = repo.RegisterTestCase(RegisterTestCaseParams{
@@ -157,11 +173,11 @@ func createTestCase(c APIContext) error {
 		Expected:     params.Expected,
 	})
 	if err != nil {
-		return err
+		return &restapi.InternalError{err}
 	}
 
 	res := RegisterResponse{
 		UUID: params.UUID,
 	}
-	return c.WriteJSON(res)
+	return &restapi.Ok{&res}
 }
