@@ -3,8 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"net/http"
+
+	"github.com/pkg/errors"
 
 	"github.com/sirupsen/logrus"
 )

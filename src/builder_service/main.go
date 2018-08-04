@@ -23,10 +23,10 @@ func main() {
 	master := NewBuildMaster(databaseConnector, messageRouterFactory)
 	killChan := getKillSignalChan()
 	service := restapi.NewService(restapi.ServiceConfig{
-		g_routes,
-		config.ServerURL,
-		config.LogFileName,
-		context,
+		RouterConfig: g_routes,
+		ServerURL:    config.ServerURL,
+		LogFileName:  config.LogFileName,
+		Context:      context,
 	})
 	defer service.Shutdown()
 

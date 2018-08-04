@@ -1,10 +1,16 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
+
+	"github.com/pkg/errors"
+
+	"github.com/streadway/amqp"
 )
 
 const (
@@ -44,6 +50,27 @@ func ParseConfig() (*Config, error) {
 	return &config, nil
 }
 
+// DatabaseConnector - creates SQL database connection
+type DatabaseConnector interface {
+	Connect() (*sql.DB, error)
+}
+
+type mySQLConnector struct {
+	User         string
+	Password     string
+	Host         string
+	DatabaseName string
+}
+
+func (c *mySQLConnector) Connect() (*sql.DB, error) {
+	params := fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", c.User, c.Password, c.Host, c.DatabaseName)
+	db, err := sql.Open("mysql", params)
+	if err != nil {
+		return nil, errors.Wrap(err, "cannot connect database")
+	}
+	return db, nil
+}
+
 // NewMySQLConnector - creates MySQL database connector
 func NewMySQLConnector(config *Config) DatabaseConnector {
 	var connector mySQLConnector
@@ -52,4 +79,36 @@ func NewMySQLConnector(config *Config) DatabaseConnector {
 	connector.Host = config.MySQLHost
 	connector.DatabaseName = config.MySQLDB
 	return &connector
+}
+
+// MessageRouterFactory - creates new message routers
+type MessageRouterFactory interface {
+	NewMessageRouter() *MessageRouter
+}
+
+type messageRouterFactoryImpl struct {
+	socket string
+}
+
+// NewMessageRouterFactory - creates factory that creates routers on given socket
+func NewMessageRouterFactory(socket string) MessageRouterFactory {
+	f := new(messageRouterFactoryImpl)
+	f.socket = socket
+	return f
+}
+
+// NewMessageRouter - creates message router
+func (f *messageRouterFactoryImpl) NewMessageRouter() *MessageRouter {
+	var router MessageRouter
+	router.conn, router.lastError = amqp.Dial(f.socket)
+	if router.lastError == nil {
+		defer func() {
+			if router.channel == nil {
+				router.conn.Close()
+				router.conn = nil
+			}
+		}()
+		router.channel, router.lastError = router.conn.Channel()
+	}
+	return &router
 }

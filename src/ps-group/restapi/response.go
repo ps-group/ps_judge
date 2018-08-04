@@ -2,9 +2,10 @@ package restapi
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
+
+	"github.com/pkg/errors"
 )
 
 // Response - represents API response
