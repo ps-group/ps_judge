@@ -24,7 +24,7 @@ type Config struct {
 	MySQLHost     string `json:"mysql_host"`
 	MySQLDB       string `json:"mysql_db"`
 	AmqpSocket    string `json:"amqp_socket"`
-	ServerURL     string `json:"server_url"`
+	ServerURL     string `json:"builder_url"`
 	LogFileName   string `json:"log_file_name"`
 }
 
