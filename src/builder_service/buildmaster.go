@@ -70,7 +70,7 @@ func (master *BuildMaster) processBuildReport(report BuildReport) error {
 	}
 	defer db.Close()
 
-	repo := NewRepository(db)
+	repo := NewBuilderRepository(db)
 	err = repo.AddBuildReport(report)
 	if err != nil {
 		return errors.Wrap(err, "cannot add build report")

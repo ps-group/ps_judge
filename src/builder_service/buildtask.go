@@ -67,7 +67,7 @@ func (g *buildTaskGenerator) Next() (bool, Task) {
 		return false, nil
 	}
 	defer db.Close()
-	repo := NewRepository(db)
+	repo := NewBuilderRepository(db)
 	build, err := repo.PullPendingBuild()
 	if err != nil {
 		logrus.WithField("error", err).Error("read task from database failed")

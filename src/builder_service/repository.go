@@ -52,19 +52,19 @@ type PendingBuildResult struct {
 	Language     language
 }
 
-// BuildRepositoryImpl - parameters for DB request
-type BuildRepositoryImpl struct {
+// BuilderRepository - models builder service database
+type BuilderRepository struct {
 	db *sql.DB
 }
 
-// NewRepository - creates repository with given database connection
-func NewRepository(db *sql.DB) *BuildRepositoryImpl {
-	var r BuildRepositoryImpl
+// NewBuilderRepository - creates repository with given database connection
+func NewBuilderRepository(db *sql.DB) *BuilderRepository {
+	var r BuilderRepository
 	r.db = db
 	return &r
 }
 
-func (r *BuildRepositoryImpl) query(query string, args ...interface{}) (*sql.Rows, error) {
+func (r *BuilderRepository) query(query string, args ...interface{}) (*sql.Rows, error) {
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		if rows != nil {
@@ -75,7 +75,7 @@ func (r *BuildRepositoryImpl) query(query string, args ...interface{}) (*sql.Row
 	return rows, nil
 }
 
-func (r *BuildRepositoryImpl) prepare(query string) (*sql.Stmt, error) {
+func (r *BuilderRepository) prepare(query string) (*sql.Stmt, error) {
 	stmt, err := r.db.Prepare(query)
 	if err != nil {
 		return nil, errors.Wrap(err, "sql prepare '"+query+"' failed")
@@ -84,21 +84,21 @@ func (r *BuildRepositoryImpl) prepare(query string) (*sql.Stmt, error) {
 }
 
 // RegisterBuild - registers new build task
-func (r *BuildRepositoryImpl) RegisterBuild(params RegisterBuildParams) error {
+func (r *BuilderRepository) RegisterBuild(params RegisterBuildParams) error {
 	q := "INSERT INTO build (`assignment_id`, `key`, `status`, `language`, `source`) VALUES (?, ?, ?, ?, ?)"
 	_, err := r.query(q, params.AssignmentID, params.Key, "pending", params.Language, params.Source)
 	return err
 }
 
 // RegisterTestCase - registers new test case for the assignment solutions
-func (r *BuildRepositoryImpl) RegisterTestCase(params RegisterTestCaseParams) error {
+func (r *BuilderRepository) RegisterTestCase(params RegisterTestCaseParams) error {
 	q := "INSERT INTO testcase (`assignment_id`, `key`, `input`, `expected`) VALUES (?, ?, ?, ?)"
 	_, err := r.query(q, params.AssignmentID, params.Key, params.Input, params.Expected)
 	return err
 }
 
 // PullPendingBuild - pulls one pending build from database and turns it into 'building' status
-func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
+func (r *BuilderRepository) PullPendingBuild() (*PendingBuildResult, error) {
 	rows, err := r.query("SELECT `assignment_id`, `key`, `language`, `source` FROM build WHERE `status` = 'pending' LIMIT 1")
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func (r *BuildRepositoryImpl) PullPendingBuild() (*PendingBuildResult, error) {
 }
 
 // AddBuildReport - adds finished build report
-func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
+func (r *BuilderRepository) AddBuildReport(params BuildReport) error {
 	buildID, err := r.GetBuildID(params.Key)
 
 	_, err = r.query(
@@ -139,7 +139,7 @@ func (r *BuildRepositoryImpl) AddBuildReport(params BuildReport) error {
 }
 
 // GetTestCases - returns list of test cases for the assignment solutions
-func (r *BuildRepositoryImpl) GetTestCases(assignmentID int) ([]TestCase, error) {
+func (r *BuilderRepository) GetTestCases(assignmentID int) ([]TestCase, error) {
 	var cases []TestCase
 	rows, err := r.query("SELECT input, expected FROM testcase WHERE `assignment_id`=?", assignmentID)
 	if err != nil {
@@ -157,7 +157,7 @@ func (r *BuildRepositoryImpl) GetTestCases(assignmentID int) ([]TestCase, error)
 }
 
 // GetBuildStatus - returns build status string
-func (r *BuildRepositoryImpl) GetBuildStatus(key string) (Status, error) {
+func (r *BuilderRepository) GetBuildStatus(key string) (Status, error) {
 	rows, err := r.query("SELECT status FROM build WHERE `key`=?", key)
 	if err != nil {
 		return "", errors.Wrap(err, "SQL SELECT query failed")
@@ -174,7 +174,7 @@ func (r *BuildRepositoryImpl) GetBuildStatus(key string) (Status, error) {
 }
 
 // GetBuildReport - returns detailed report for finished build
-func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
+func (r *BuilderRepository) GetBuildReport(key string) (*BuildReport, error) {
 	rows, err := r.query("SELECT id, status FROM build WHERE `key`=?", key)
 	if err != nil {
 		return nil, errors.Wrap(err, "SQL SELECT query failed")
@@ -209,7 +209,7 @@ func (r *BuildRepositoryImpl) GetBuildReport(key string) (*BuildReport, error) {
 }
 
 // GetAssignmentID - returns assignment ID for given cross-service unique key
-func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
+func (r *BuilderRepository) GetAssignmentID(key string) (int64, error) {
 	rows, err := r.query("SELECT id FROM assignment WHERE `key`=?", key)
 
 	if !rows.Next() {
@@ -221,7 +221,7 @@ func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
 		if err != nil {
 			return 0, err
 		}
-		id, _ := res.LastInsertId()
+		id, err := res.LastInsertId()
 		if err != nil {
 			return 0, err
 		}
@@ -238,7 +238,7 @@ func (r *BuildRepositoryImpl) GetAssignmentID(key string) (int64, error) {
 }
 
 // GetBuildID - returns build ID for given cross-service unique key
-func (r *BuildRepositoryImpl) GetBuildID(key string) (int64, error) {
+func (r *BuilderRepository) GetBuildID(key string) (int64, error) {
 	rows, err := r.query("SELECT id FROM build WHERE `key`=?", key)
 	if err != nil {
 		return 0, errors.Wrap(err, "SQL SELECT query failed")
