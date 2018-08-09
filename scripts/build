@@ -3,9 +3,13 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+BACKEND_WORKDIR=${PROJECT_DIR}/var/backend_service
 BUILDER_WORKDIR=${PROJECT_DIR}/var/builder_service
 FRONTEND_WORKDIR=${PROJECT_DIR}/var/frontend_server
 FRONTEND_SRC=${PROJECT_DIR}/src/frontend_server
+
+bash "${PROJECT_DIR}/src/backend_service/build"
+mkdir -p "${BACKEND_WORKDIR}"
 
 bash "${PROJECT_DIR}/src/builder_service/build"
 mkdir -p "${BUILDER_WORKDIR}"

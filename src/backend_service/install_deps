@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -e
+echo Installing backend_service Go dependencies
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export GOPATH="${SCRIPT_DIR}/../.."
+go get -u github.com/go-sql-driver/mysql
+go get -u github.com/gorilla/mux
+go get -u github.com/sirupsen/logrus
+go get -u github.com/pkg/errors

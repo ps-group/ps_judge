@@ -3,11 +3,15 @@ set -e
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+BACKEND_WORKDIR=${PROJECT_DIR}/var/backend_service
 BUILDER_WORKDIR=${PROJECT_DIR}/var/builder_service
 FRONTEND_SRC=${PROJECT_DIR}/src/frontend_server
 FRONTEND_WORKDIR=${PROJECT_DIR}/var/frontend_server
 
 "${SCRIPT_DIR}/build"
+
+echo Running backend_service in background
+(cd "${BACKEND_WORKDIR}" && "${PROJECT_DIR}/bin/backend_service" 1>"backend_service_output.txt" 2>"backend_service_errors.txt" &)
 
 echo Running builder_service in background
 (cd "${BUILDER_WORKDIR}" && "${PROJECT_DIR}/bin/builder_service" 1>"builder_service_output.txt" 2>"builder_service_errors.txt" &)

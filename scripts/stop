@@ -15,7 +15,7 @@ killNodeApp() {
 
 # Usage: killNativeApp <AppName>
 killNativeApp() {
-    local PROCESS_LIST=$(ps aux | grep $1)
+    local PROCESS_LIST=$(ps aux | grep $1 | grep -v grep)
     if [ $(echo "${PROCESS_LIST}" | wc -l) > 1 ]; then
         local PID_LIST=$(echo ${PROCESS_LIST} | awk '{print $2}')
         for pid in ${PID_LIST}; do {
@@ -26,5 +26,6 @@ killNativeApp() {
 }
 
 killNodeApp "frontend_server"
+killNativeApp backend_service
 killNativeApp builder_service
 echo "done"

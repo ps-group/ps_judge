@@ -10,13 +10,11 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/streadway/amqp"
-
 	_ "github.com/go-sql-driver/mysql"
 )
 
 const (
-	configName = "builder_service.json"
+	configName = "backend_service.json"
 )
 
 // Config - video server instance configuration
@@ -25,8 +23,8 @@ type Config struct {
 	MySQLPassword string `json:"mysql_password"`
 	MySQLHost     string `json:"mysql_host"`
 	MySQLDB       string `json:"mysql_db"`
-	AmqpSocket    string `json:"amqp_socket"`
-	ServerURL     string `json:"builder_url"`
+	ServerURL     string `json:"backend_url"`
+	BuilderURL    string `json:"builder_url"`
 	LogFileName   string `json:"log_file_name"`
 }
 
@@ -81,36 +79,4 @@ func NewMySQLConnector(config *Config) DatabaseConnector {
 	connector.Host = config.MySQLHost
 	connector.DatabaseName = config.MySQLDB
 	return &connector
-}
-
-// MessageRouterFactory - creates new message routers
-type MessageRouterFactory interface {
-	NewMessageRouter() *MessageRouter
-}
-
-type messageRouterFactoryImpl struct {
-	socket string
-}
-
-// NewMessageRouterFactory - creates factory that creates routers on given socket
-func NewMessageRouterFactory(socket string) MessageRouterFactory {
-	f := new(messageRouterFactoryImpl)
-	f.socket = socket
-	return f
-}
-
-// NewMessageRouter - creates message router
-func (f *messageRouterFactoryImpl) NewMessageRouter() *MessageRouter {
-	var router MessageRouter
-	router.conn, router.lastError = amqp.Dial(f.socket)
-	if router.lastError == nil {
-		defer func() {
-			if router.channel == nil {
-				router.conn.Close()
-				router.conn = nil
-			}
-		}()
-		router.channel, router.lastError = router.conn.Channel()
-	}
-	return &router
 }

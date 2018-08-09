@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	"github.com/pkg/errors"
-
-	_ "github.com/go-sql-driver/mysql"
 )
 
 // BuildRepository - represents builder database model

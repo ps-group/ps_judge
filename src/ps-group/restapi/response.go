@@ -72,7 +72,8 @@ func writeErrorResponse(err error, status int, w http.ResponseWriter) error {
 			Text: err.Error(),
 		},
 	}
-	return writeJSONResponse(res, status, w)
+	writeJSONResponse(res, status, w)
+	return err
 }
 
 func writeResponse(data interface{}, status int, w http.ResponseWriter) error {
