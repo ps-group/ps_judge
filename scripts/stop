@@ -28,4 +28,4 @@ killNativeApp() {
 killNodeApp "frontend_server"
 killNativeApp backend_service
 killNativeApp builder_service
-echo "done"
+echo "stopped all services"
