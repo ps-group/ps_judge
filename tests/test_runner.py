@@ -2,6 +2,7 @@ import json
 import requests
 import sys
 import traceback
+import uuid
 
 class TestScenario:
     def __init__(self, api_url):
@@ -30,12 +31,18 @@ class TestScenario:
         return response_json
 
     def throw_if_error_response(self, response):
-        if response.get('error') is not None:
+        if isinstance(response, dict) and response.get('error') is not None:
             reason = response.get('error', dict()).get('text', '')
-            raise RuntimeError('method failed:', reason)
+            raise RuntimeError('method failed: ' + reason)
 
     def dump_response(self, response):
         print('response:\n{0}'.format(json.dumps(response, indent=2)))
+
+    def create_uuid(self):
+        """
+        Returns string like '9fe2c4e93f654fdbb24c02b15259716c'
+        """
+        return uuid.uuid4().hex
 
 def run_test_scenarios(scenario_classes):
     total_count = 0

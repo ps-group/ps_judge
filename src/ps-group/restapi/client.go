@@ -33,7 +33,7 @@ func (c *Client) Post(method string, params interface{}, result interface{}) err
 
 	request, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBytes))
 	if err != nil {
-		return errors.Wrap(err, "cannot create request for POST method "+method)
+		return errors.Wrap(err, "cannot create request for POST method "+method+", url="+url)
 	}
 
 	request.Header.Set("Content-Type", "application/json")

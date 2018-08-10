@@ -5,7 +5,10 @@ import (
 )
 
 // APIPrefix - prefix for each builder API method, contains API version
-const APIPrefix = "/api/v1/"
+const (
+	APIPrefix     = "/api/v1/"
+	DefaultScheme = "http://"
+)
 
 // BuilderService - accessor to the builder service REST API
 type BuilderService interface {
@@ -25,7 +28,7 @@ type RegisterResponse struct {
 // NewBuilderService - creates new builder service accessor
 func NewBuilderService(builderURL string) BuilderService {
 	bs := new(builderServiceImpl)
-	bs.client = restapi.NewClient(builderURL + APIPrefix)
+	bs.client = restapi.NewClient(DefaultScheme + builderURL + APIPrefix)
 	return bs
 }
 

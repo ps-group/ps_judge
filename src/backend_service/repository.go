@@ -133,7 +133,7 @@ func (r *BackendRepository) getUserSolutions(userID int64) ([]SolutionModel, err
 }
 
 func (r *BackendRepository) getSolution(userID int64, assignmentID int64) (*SolutionModel, error) {
-	rows, err := r.query("SELECT `id`, `score` FROM solution WHERE user_id=? AND assignmet_id=? LIMIT 1", userID)
+	rows, err := r.query("SELECT `id`, `score` FROM solution WHERE user_id=? AND assignment_id=? LIMIT 1", userID, assignmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ type CommitModel struct {
 	ID          int64
 	SolutionID  int64
 	BuildStatus string
-	BuildScore  int
+	BuildScore  int64
 }
 
 func (r *BackendRepository) createCommit(solutionID int64, uuid string) error {
@@ -248,7 +248,7 @@ func (r *BackendRepository) createCommit(solutionID int64, uuid string) error {
 }
 
 func (r *BackendRepository) getLastCommit(solutionID int64) (*CommitModel, error) {
-	rows, err := r.query("SELECT `id`, `build_status`, `build_score` FROM commit where solution_id=? RDER BY `id` DESC LIMIT 1", solutionID)
+	rows, err := r.query("SELECT `id`, `build_status`, `build_score` FROM commit where solution_id=? ORDER BY `id` DESC LIMIT 1", solutionID)
 	if err != nil {
 		return nil, err
 	}
@@ -258,9 +258,11 @@ func (r *BackendRepository) getLastCommit(solutionID int64) (*CommitModel, error
 		return nil, nil
 	}
 
+	var score sql.NullInt64
 	var result CommitModel
 	result.SolutionID = solutionID
-	err = rows.Scan(&result.ID, &result.BuildStatus, &result.BuildScore)
+	err = rows.Scan(&result.ID, &result.BuildStatus, &score)
+	result.BuildScore = score.Int64
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to scan SQL rows")
 	}

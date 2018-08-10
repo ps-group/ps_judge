@@ -80,12 +80,6 @@ class RegisterBuildScenario(BuilderTestScenario):
         assert response.get('uuid') == uuid
         return response
 
-    def create_uuid(self):
-        """
-        Returns string like '9fe2c4e93f654fdbb24c02b15259716c'
-        """
-        return uuid.uuid4().hex
-
 if __name__ == "__main__":
     run_test_scenarios([
         RegisterBuildScenario
