@@ -195,7 +195,7 @@ func (r *BackendRepository) getAssignment(assignmentID int64) (*AssignmentInfoMo
 }
 
 func (r *BackendRepository) getAssignmentFull(assignmentID int64) (*AssignmentFullModel, error) {
-	rows, err := r.query("SELECT `contest_id`, `uuid`, `title`, article` FROM assignment WHERE id=?", assignmentID)
+	rows, err := r.query("SELECT `contest_id`, `uuid`, `title`, `article` FROM assignment WHERE id=?", assignmentID)
 	if err != nil {
 		return nil, err
 	}

@@ -71,10 +71,15 @@ class ViewAndCommitScenario(BackendTestScenario):
         user_id = login_info['user_id']
         contest_id = login_info['user']['contest_id']
         assignments = self.view_contest(contest_id)
-        assignment_id = self.get_aplusb_assignment_id(assignments)
+        assignment = self.get_aplusb_assignment(assignments)
+        assignment_id = assignment['id']
+        self.check_assignment_info(assignment)
+
         build_uuid = self.commit_aplusb_solution(user_id, assignment_id)
         
         solutions = self.get_user_solutions(user_id)
+        solution = self.get_solution_of_assignment(solutions, assignment_id)
+        assert solution['assignment_title'] == 'A+B Problem'
 
     def login_ok(self):
         response = self.post_json('user/login', {
@@ -83,16 +88,22 @@ class ViewAndCommitScenario(BackendTestScenario):
         })
         return response
 
+    def get_solution_of_assignment(self, solutions, assignment_id):
+        for solution in solutions:
+            if solution['assignment_id'] == assignment_id:
+                return solution
+        raise RuntimeError('solution for assignment #{0} not found in list'.format(str(assignment_id)))
+
     def view_contest(self, contest_id):
         response = self.get_json('contest/{0}/assignments'.format(str(contest_id)))
         assert isinstance(response, list)
         assert len(response) > 0
         return response
 
-    def get_aplusb_assignment_id(self, assignments):
+    def get_aplusb_assignment(self, assignments):
         for assignment in assignments:
             if assignment['title'] == 'A+B Problem':
-                return assignment['id']
+                return assignment
         raise RuntimeError('A+B Problem not fund in assignments list')
 
     def commit_aplusb_solution(self, user_id, assignment_id):
@@ -106,9 +117,22 @@ class ViewAndCommitScenario(BackendTestScenario):
         assert isinstance(response['uuid'], str)
         return response['uuid']
 
+    def check_assignment_info(self, assignment):
+        response = self.get_json('assignment/{0}'.format(str(assignment['id'])))
+        assert assignment['id'] == response['id']
+        assert assignment['title'] == response['title']
+        assert assignment['contest_id'] == response['contest_id']
+        assert assignment['uuid'] == response['uuid']
+        assert isinstance(response['description'], str)
+
     def get_user_solutions(self, user_id):
         response = self.get_json('user/{0}/solutions'.format(str(user_id)))
-        self.dump_response(response)
+        for solution in response:
+            assert isinstance(solution['assignment_id'], int)
+            assert isinstance(solution['assignment_title'], str)
+            assert isinstance(solution['commit_id'], int)
+            assert isinstance(solution['score'], int)
+            assert isinstance(solution['build_status'], str)
         return response
 
 if __name__ == "__main__":
