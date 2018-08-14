@@ -1,42 +1,33 @@
-const connect = require('connect');
-const compression = require('compression');
-const cookieSession = require('cookie-session');
-const serveStatic = require('serve-static');
-const bodyParser = require('body-parser');
-const http = require('http');
-const url = require('url');
-const fs = require('fs');
-const util = require('util');
-const routes = require('./routes');
-const Router = require('./router');
-const appcontext = require('./appcontext');
-const config = require('./config');
-const messagerouter = require('./data/messagerouter.js');
-const buildlistener = require('./listeners/buildlistener.js');
+import connect from 'connect';
+import compression from 'compression';
+import cookieSession from 'cookie-session';
+import serveStatic from 'serve-static';
+import bodyParser from 'body-parser';
+import { createServer as _createServer } from 'http';
+import { parse } from 'url';
+import { readFile } from 'fs';
+import { promisify } from 'util';
+import { ROUTES } from './routes.mjs';
+import Router from './router.mjs';
+import { AppContext } from './appcontext.mjs';
+import { readConfig } from './config.mjs';
 
 const SESSION_SECRET = '7pv0OvUy';
 
-class Server
+export class Server
 {
     constructor()
     {
-        this.readFileAsync = util.promisify(fs.readFile);
+        this.readFileAsync = promisify(readFile);
     }
 
     async start()
     {
-        this.config = await config.readConfig('frontend_server.json');
-        this.context = new appcontext.AppContext(this.config);
+        this.config = await readConfig('frontend_server.json');
+        this.context = new AppContext(this.config);
         this.createServer({
             "port": this.config.port,
-            "routes": routes.ROUTES
-        });
-        this.messageRouter = new messagerouter.MessageRouter();
-        this.buildListener = new buildlistener.BuildListener(this.context);
-        this.messageRouter.consumeBuildFinished((info) => {
-            const uuid = String(info['key']);
-            const succeed = Boolean(info['succeed']);
-            this.buildListener.onBuildFinished(uuid, succeed);
+            "routes": ROUTES
         });
     }
 
@@ -51,7 +42,7 @@ class Server
         // store session state in browser cookie
         // TODO: store session data in Redis
         this.app.use(cookieSession({
-            secret: 'SESSION_SECRET'
+            secret: SESSION_SECRET
         }));
 
         // parse urlencoded request bodies into req.body
@@ -59,7 +50,7 @@ class Server
 
         // respond to all requests with application-specific handlers
         this.app.use((request, response, next) => {
-            this.handleCustom(request, response, next)
+            this.handleCustom(request, response, next);
         });
 
         // serve static files
@@ -68,12 +59,12 @@ class Server
         }));
 
         console.log('starting on http://localhost:' + options.port + '/');
-        http.createServer(this.app).listen(options.port);
+        _createServer(this.app).listen(options.port);
     }
 
     handleCustom(request, response, next)
     {
-        const path = url.parse(request.url).pathname;
+        const path = parse(request.url).pathname;
         const route = this.router.find(path);
         if (route !== null)
         {
@@ -89,8 +80,8 @@ class Server
     {
         try
         {
-            const handlerClass = require('./handlers/' + route.handler);
-            const hanler = new handlerClass(this.context, request, response);
+            const module = await import('./handlers/' + route.handler);
+            const hanler = new module.default(this.context, request, response);
             await hanler[route.action]();
         }
         catch (error)
@@ -115,14 +106,18 @@ class Server
                 }
                 return error.message || '';
             }
-            return '' + error
+            return '' + error;
         }
         catch (nextError)
         {
-            return `failed to print error (${nextError})`
+            return `failed to print error (${nextError})`;
         }
     }
 }
 
-const server = new Server();
-server.start();
+export function runServer()
+{
+    const server = new Server();
+    server.start();
+}
+

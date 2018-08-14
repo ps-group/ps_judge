@@ -1,7 +1,5 @@
-const http = require('http');
-const util = require('util');
-const url = require('url');
-const assert = require('assert');
+import { request as _request } from 'http';
+import assert from 'assert';
 
 /**
  * @typedef {Object} BuildReport
@@ -14,7 +12,7 @@ const assert = require('assert');
  * @property {number} tests_total
  */
 
-class BackendApi
+export class BuilderApi
 {
     /**
      * @param {config.Config} config 
@@ -41,10 +39,10 @@ class BackendApi
             'assignment_uuid': assignmentUuid,
             'language': language,
             'source': source
-        }
+        };
         const response = await this._sendPost('build/new', params);
         assert(uuid == String(response['uuid']));
-        console.log('BackendApi: registered build ' + uuid);
+        console.log('BuilderApi: registered build ' + uuid);
 
         return uuid;
     }
@@ -64,10 +62,10 @@ class BackendApi
             'assignment_uuid': assignmentUuid,
             'input': input,
             'expected': expected
-        }
+        };
         const response = await this._sendPost('testcase/new', params);
         assert(uuid == String(response['uuid']));
-        console.log('BackendApi: registered test case with uuid ' + uuid);
+        console.log('BuilderApi: registered test case with uuid ' + uuid);
 
         return uuid;
     }
@@ -107,7 +105,7 @@ class BackendApi
                 path: this._apiPrefix + method,
                 method: 'GET'
             };
-            const request = http.request(options, (response) => {
+            const request = _request(options, (response) => {
                 try
                 {
                     if (response.statusCode != 200) {
@@ -154,7 +152,7 @@ class BackendApi
                     'Content-Type': 'application/json'
                 }
             };
-            const request = http.request(options, (response) => {
+            const request = _request(options, (response) => {
                 try
                 {
                     if (response.statusCode != 200) {
@@ -183,5 +181,3 @@ class BackendApi
         });
     }
 }
-
-module.exports.BackendApi = BackendApi;

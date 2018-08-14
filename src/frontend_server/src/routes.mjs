@@ -1,10 +1,10 @@
-const LOGIN_URL = '/login';
-const ADMIN_HOME_URL = '/admin';
-const STUDENT_HOME_URL = '/student';
-const STUDENT_SOLUTIONS_URL = '/student/solutions';
-const JUDGE_HOME_URL = '/judge';
+export const LOGIN_URL = '/login';
+export const ADMIN_HOME_URL = '/admin';
+export const STUDENT_HOME_URL = '/student';
+export const STUDENT_SOLUTIONS_URL = '/student/solutions';
+export const JUDGE_HOME_URL = '/judge';
 
-const ROUTES = {};
+export const ROUTES = {};
 ROUTES['/'] = {
     "handler": "main",
     "action": "index"
@@ -37,10 +37,3 @@ ROUTES['/student/commit'] = {
     "handler": "student",
     "action": "commit"
 };
-
-module.exports.ROUTES = ROUTES;
-module.exports.LOGIN_URL =  LOGIN_URL;
-module.exports.ADMIN_HOME_URL = ADMIN_HOME_URL;
-module.exports.STUDENT_HOME_URL = STUDENT_HOME_URL;
-module.exports.STUDENT_SOLUTIONS_URL = STUDENT_SOLUTIONS_URL;
-module.exports.JUDGE_HOME_URL = JUDGE_HOME_URL;

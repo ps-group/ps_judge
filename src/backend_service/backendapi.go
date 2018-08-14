@@ -286,8 +286,8 @@ func getContestAssignments(ctx interface{}, req restapi.Request) restapi.Respons
 	return &restapi.Ok{infos}
 }
 
-// AssignmentInfoResponse - result of assignment info request
-type AssignmentInfoResponse struct {
+// FullAssignmentInfo - result of assignment info request
+type FullAssignmentInfo struct {
 	ID          int64  `json:"id"`
 	ContestID   int64  `json:"contest_id"`
 	UUID        string `json:"uuid"`
@@ -313,7 +313,7 @@ func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	result := AssignmentInfoResponse{
+	result := FullAssignmentInfo{
 		ID:          assignmentID,
 		ContestID:   assignment.ContestID,
 		UUID:        assignment.UUID,

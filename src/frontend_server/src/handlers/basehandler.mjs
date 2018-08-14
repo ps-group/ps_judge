@@ -1,12 +1,12 @@
-const util = require('util');
-const ejs = require('ejs');
-const routes = require('../routes');
-const assert = require('assert');
-const backendapi = require('../data/backendapi');
+import { promisify } from 'util';
+import ejs from 'ejs';
+import { LOGIN_URL } from '../routes';
+import assert from 'assert';
+import BackendApi from '../data/backendapi.mjs';
 
-const renderFileAsync = util.promisify(ejs.renderFile);
+const renderFileAsync = promisify(ejs.renderFile);
 
-class BaseHandler
+export class BaseHandler
 {
     /**
      * @param {context.Context} context
@@ -28,13 +28,9 @@ class BaseHandler
          */
         this._response = response;
         /**
-         * @property {repository.FrontendRepository}
+         * @property {BackendApi}
          */
-        this._repository = null;
-        /**
-         * @property {backendapi.BackendApi}
-         */
-        this._backendApi = null;
+        this._backend = this._context.backend;
     }
 
     /**
@@ -64,37 +60,16 @@ class BaseHandler
     }
 
     /**
-     * Returns true if user authorized
-     */
-    _hasAuth()
-    {
-        return this.session.authorized;
-    }
-
-    /**
      * Checks if user authorized and redirects to login page if
      */
     async _checkAuth()
     {
-        if (!this._hasAuth())
+        if (!this.session.authorized)
         {
-            await this._redirect(routes.LOGIN_URL);
+            await this._redirect(LOGIN_URL);
             return false;
         }
         return true;
-    }
-
-    /**
-     * Fetches current user info or returns null if user is not authorized.
-     */
-    async _fetchUser()
-    {
-        const checked = await this._checkAuth()
-        if (checked)
-        {
-            return this.repository.getUserAuthInfo(this.session.username);
-        }
-        return null;
     }
 
     /**
@@ -124,28 +99,8 @@ class BaseHandler
     /**
      * @returns {backendapi.BackendApi}
      */
-    get backendApi()
+    get backend()
     {
-        if (!this._backendApi)
-        {
-            this._backendApi = new backendapi.BackendApi(this._context.config);
-        }
-        return this._backendApi;
-    }
-
-    /**
-     * Initializes repository lazily.
-     * @returns {repository.FrontendRepository}
-     */
-    get repository()
-    {
-        if (!this._repository)
-        {
-            this._repository = this._context.connectDB();
-        }
-        assert(this._repository);
-        return this._repository;
+        return this._context.backend;
     }
 }
-
-module.exports.BaseHandler = BaseHandler;

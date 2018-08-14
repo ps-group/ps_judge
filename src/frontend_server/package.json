@@ -1,0 +1,15 @@
+{
+    "name": "psjudge_frontend_service",
+    "version": "0.0.1",
+    "main": "index.js",
+    "dependencies": {
+        "ejs": "2.6.1",
+        "serve-static": "1.13.2",
+        "connect": "3.6.6",
+        "compression": "1.7.3",
+        "cookie-session": "2.0.0-beta.3",
+        "body-parser": "1.18.3",
+        "showdown": "1.8.6",
+        "uuid": "3.3.2"
+    }
+}

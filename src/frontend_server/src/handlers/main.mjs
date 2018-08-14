@@ -1,9 +1,10 @@
-const basehandler = require('./basehandler');
-const repository = require('../data/repository');
-const routes = require('../routes');
-const password = require('../data/password');
+import { BaseHandler } from './basehandler.mjs';
+import { ROLE_ADMIN, ROLE_JUDGE, ROLE_STUDENT } from '../data/roles.mjs';
+import { ADMIN_HOME_URL, JUDGE_HOME_URL, STUDENT_HOME_URL } from '../routes';
+import { hashPassword } from '../data/password.mjs';
+import { verifyInt, verifyString, verifyArray } from '../validate.mjs';
 
-class Main extends basehandler.BaseHandler
+export default class MainHandler extends BaseHandler
 {
     /**
      * @param {context.Context} context
@@ -17,7 +18,7 @@ class Main extends basehandler.BaseHandler
 
     async index() 
     {
-        const checked = await this._checkAuth()
+        const checked = await this._checkAuth();
         if (checked)
         {
             return this._redirectAuthorized();
@@ -28,7 +29,7 @@ class Main extends basehandler.BaseHandler
     {
         if (this.request.method != 'POST')
         {
-            if (this._hasAuth(this.request))
+            if (this.session.authorized)
             {
                 this._redirectAuthorized(this.request);
             }
@@ -41,13 +42,14 @@ class Main extends basehandler.BaseHandler
         {
             const username = this.request.body['username'];
             const rawPassword = this.request.body['password'];
-            const passwordHash = password.hashPassword(rawPassword);
-
-            const info = await this.repository.getUserAuthInfo(username);
-            if (info != null && (info['password'] == passwordHash))
+            const passwordHash = hashPassword(rawPassword);
+            const loginInfo = await this._backend.loginUser(username, passwordHash);
+            if (loginInfo.succeed)
             {
                 this.session.authorized = true;
-                this.session.username = username;
+                this.session.userId = verifyInt(loginInfo['user_id']);
+                this.session.username = verifyString(loginInfo['user']['username']);
+                this.session.roles = verifyArray(loginInfo['user']['roles']);
                 return this._redirectAuthorized();
             }
             else
@@ -59,19 +61,18 @@ class Main extends basehandler.BaseHandler
 
     async _redirectAuthorized()
     {
-        const info = await this.repository.getUserAuthInfo(this.session.username);
-        const roles = '' + info['roles'];
-        if (roles.indexOf(repository.ROLE_ADMIN) >= 0)
+        const roles = this.session.roles;
+        if (roles.indexOf(ROLE_ADMIN) >= 0)
         {
-            return this._redirect(routes.ADMIN_HOME_URL);
+            return this._redirect(ADMIN_HOME_URL);
         }
-        else if (roles.indexOf(repository.ROLE_JUDGE) >= 0)
+        else if (roles.indexOf(ROLE_JUDGE) >= 0)
         {
-            return this._redirect(routes.JUDGE_HOME_URL);
+            return this._redirect(JUDGE_HOME_URL);
         }
-        else if (roles.indexOf(repository.ROLE_STUDENT) >= 0)
+        else if (roles.indexOf(ROLE_STUDENT) >= 0)
         {
-            return this._redirect(routes.STUDENT_HOME_URL);
+            return this._redirect(STUDENT_HOME_URL);
         }
         else
         {
@@ -79,5 +80,3 @@ class Main extends basehandler.BaseHandler
         }
     }
 }
-
-module.exports = Main;

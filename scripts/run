@@ -17,4 +17,4 @@ echo Running builder_service in background
 (cd "${BUILDER_WORKDIR}" && "${PROJECT_DIR}/bin/builder_service" 1>"builder_service_output.txt" 2>"builder_service_errors.txt" &)
 
 echo Running frontend_server in background
-(cd "${FRONTEND_WORKDIR}" && node "${FRONTEND_SRC}/src/server.js" 1>"frontend_server_output.txt" 2>"frontend_server_errors.txt" &)
+(cd "${FRONTEND_WORKDIR}" && node --experimental-modules "${FRONTEND_SRC}/src/server.mjs" 1>"frontend_server_output.txt" 2>"frontend_server_errors.txt" &)

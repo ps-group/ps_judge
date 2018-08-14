@@ -1,10 +1,10 @@
-crypto = require('crypto');
+import crypto from 'crypto';
 
 /**
  * Returns password hash for given password.
  * @param {string} password
  */
-function hashPassword(password)
+export function hashPassword(password)
 {
     const salt = '2lorYmXyAovKNiK8IAfyTmed';
     const hash = crypto.createHmac('sha512', salt);
@@ -13,5 +13,3 @@ function hashPassword(password)
 
     return value;
 }
-
-module.exports.hashPassword = hashPassword;

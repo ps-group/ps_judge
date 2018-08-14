@@ -1,5 +1,5 @@
 
-class Router
+export default class Router
 {
     constructor(routes)
     {
@@ -15,5 +15,3 @@ class Router
         return null;
     }
 }
-
-module.exports = Router;

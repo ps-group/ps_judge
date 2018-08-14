@@ -1,7 +1,7 @@
-const fs = require('fs');
-const util = require('util');
+import { readFile } from 'fs';
+import { promisify } from 'util';
 
-class Config
+export class Config
 {
     constructor(jsonObject)
     {
@@ -11,6 +11,8 @@ class Config
         this.dbUser = dbAuth["user"];
         this.dbPassword = dbAuth["password"];
 
+        this.backendURL = jsonObject['backend_url'];
+
         this.port = jsonObject["port"];
         this.backendPort = jsonObject["backend_port"];
     }
@@ -19,14 +21,11 @@ class Config
 /**
  * @param {string} path 
  */
-async function readConfig(path)
+export async function readConfig(path)
 {
-    const readFileAsync = util.promisify(fs.readFile);
+    const readFileAsync = promisify(readFile);
     const jsonText = await readFileAsync(path);
     const jsonObject = JSON.parse(jsonText);
 
     return new Config(jsonObject);
 }
-
-module.exports.Config = Config;
-module.exports.readConfig = readConfig;
