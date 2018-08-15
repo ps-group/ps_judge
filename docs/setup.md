@@ -43,11 +43,7 @@ You can run all services on localhost, but still should assign different ports. 
 * `localhost:8081` for backend service
 * `localhost:8082` for builder service
 
-1. Go to the `src/frontend_server/` and create `frontend_service.json` configuration file. Look at `src/frontend_server/src/config.mjs` and create config with matching fields.
-2. Go to the `bin` directory and create `backend_service.json`
-  * See `src/backend_service/config.go` and create config with matching fields.
-3. Go to the `bin` directory and create `builder_service.json`
-  * See `src/builder_service/config.go` and create config with matching fields.
+You can create config files using `scripts/dev_config_master.py`. Just run script and answer a few questions - it will generate all config files automatically.
 
 ## Run Tests
 
