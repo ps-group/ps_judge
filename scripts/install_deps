@@ -5,7 +5,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 FRONTEND_SRC_DIR="$SCRIPT_DIR/../src/frontend_server"
 
 # Install frontend_service Node.js dependencies defined in package.json
-(cd FRONTEND_SRC_DIR && npm install)
+(cd "${FRONTEND_SRC_DIR}" && npm install)
 
 # Install Go services dependencies
 bash "$SCRIPT_DIR/../src/builder_service/install_deps"
