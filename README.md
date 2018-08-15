@@ -2,20 +2,9 @@
 
 Work in progress implementation.
 
-## Build&Run
+## Build and Run
 
-In order to build and run judge you need
-
-* Linux machine
-* Node.js
-* Go compiler
-* RabbitMQ
-
-Use `scripts/install_deps` to install Go and Node.js libraries required to run judge.
-
-Use `scripts/build` to build Go project `builder_service`.
-
-Use `scripts/run` to run both `builder_service` and `frontend_server`.
+See [Project Setup](docs/setup.md).
 
 ## Architecture
 
