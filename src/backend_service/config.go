@@ -26,6 +26,7 @@ type Config struct {
 	ServerURL     string `json:"backend_url"`
 	BuilderURL    string `json:"builder_url"`
 	LogFileName   string `json:"log_file_name"`
+	AMQPSocket    string `json:"amqp_socket"`
 }
 
 // ParseConfig loads instance configuration from pre-defined path (relative to executable)

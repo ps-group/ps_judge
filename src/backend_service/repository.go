@@ -51,7 +51,7 @@ type SolutionModel struct {
 	ID           int64
 	UserID       int64
 	AssignmentID int64
-	Score        int
+	Score        int64
 }
 
 // AssignmentInfoModel - models brief info about assignment in database
@@ -132,7 +132,7 @@ func (r *BackendRepository) getUserSolutions(userID int64) ([]SolutionModel, err
 	return results, nil
 }
 
-func (r *BackendRepository) getSolution(userID int64, assignmentID int64) (*SolutionModel, error) {
+func (r *BackendRepository) getUserAssignmentSolution(userID int64, assignmentID int64) (*SolutionModel, error) {
 	rows, err := r.query("SELECT `id`, `score` FROM solution WHERE user_id=? AND assignment_id=? LIMIT 1", userID, assignmentID)
 	if err != nil {
 		return nil, err
@@ -146,6 +146,26 @@ func (r *BackendRepository) getSolution(userID int64, assignmentID int64) (*Solu
 	result.UserID = userID
 	result.AssignmentID = assignmentID
 	err = rows.Scan(&result.ID, &result.Score)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan SQL rows")
+	}
+
+	return &result, nil
+}
+
+func (r *BackendRepository) getSolution(id int64) (*SolutionModel, error) {
+	rows, err := r.query("SELECT `score`, `user_id`, `assignment_id` FROM solution WHERE id=?", id)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rows.Next() {
+		return nil, errors.New("no solution with given ID")
+	}
+
+	var result SolutionModel
+	result.ID = id
+	err = rows.Scan(&result.Score, &result.UserID, &result.AssignmentID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to scan SQL rows")
 	}
@@ -171,6 +191,11 @@ func (r *BackendRepository) createSolution(userID int64, assignmentID int64) (*S
 		UserID:       userID,
 		AssignmentID: assignmentID,
 	}, nil
+}
+
+func (r *BackendRepository) updateSolutionScore(solutionID int64, score int64) error {
+	_, err := r.query("UPDATE solution SET score=? WHERE id=?", score, solutionID)
+	return err
 }
 
 func (r *BackendRepository) getAssignment(assignmentID int64) (*AssignmentInfoModel, error) {
@@ -248,7 +273,7 @@ func (r *BackendRepository) createCommit(solutionID int64, uuid string) error {
 }
 
 func (r *BackendRepository) getLastCommit(solutionID int64) (*CommitModel, error) {
-	rows, err := r.query("SELECT `id`, `build_status`, `build_score` FROM commit where solution_id=? ORDER BY `id` DESC LIMIT 1", solutionID)
+	rows, err := r.query("SELECT `id`, `build_status`, `build_score` FROM commit WHERE solution_id=? ORDER BY `id` DESC LIMIT 1", solutionID)
 	if err != nil {
 		return nil, err
 	}
@@ -268,4 +293,30 @@ func (r *BackendRepository) getLastCommit(solutionID int64) (*CommitModel, error
 	}
 
 	return &result, nil
+}
+
+func (r *BackendRepository) getCommitInfoByUUID(uuid string) (*CommitModel, error) {
+	rows, err := r.query("SELECT `id`, `build_status`, `build_score`, `solution_id` FROM commit WHERE uuid=?", uuid)
+	if err != nil {
+		return nil, err
+	}
+
+	if !rows.Next() {
+		return nil, errors.New("no commit with uuid=" + uuid)
+	}
+
+	var score sql.NullInt64
+	var result CommitModel
+	err = rows.Scan(&result.ID, &result.BuildStatus, &score, &result.SolutionID)
+	result.BuildScore = score.Int64
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan SQL rows")
+	}
+
+	return &result, nil
+}
+
+func (r *BackendRepository) updateCommit(model *CommitModel) error {
+	_, err := r.query("UPDATE commit SET build_status=?, build_score=? WHERE id=?", model.BuildStatus, model.BuildScore, model.ID)
+	return err
 }

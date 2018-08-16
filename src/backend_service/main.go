@@ -20,6 +20,7 @@ func main() {
 	builderService := NewBuilderService(config.BuilderURL)
 	context := newAPIContext(databaseConnector, builderService)
 	killChan := getKillSignalChan()
+
 	service := restapi.NewService(restapi.ServiceConfig{
 		RouterConfig: routes,
 		ServerURL:    config.ServerURL,
@@ -28,8 +29,12 @@ func main() {
 	})
 	defer service.Shutdown()
 
+	listener := newBuildListener(databaseConnector, builderService, config.AMQPSocket)
+	defer listener.Close()
+
 	// Start services
 	service.Start()
+	listener.Start()
 
 	// Wait for SIGTERM
 	waitForKillSignal(killChan)

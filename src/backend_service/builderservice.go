@@ -14,6 +14,7 @@ const (
 type BuilderService interface {
 	RegisterNewBuild(buildUUID string, assignmentUUID string, language string, source string) (*RegisterResponse, error)
 	RegisterTestCase(testUUID string, assignmentUUID string, input string, expected string) (*RegisterResponse, error)
+	GetBuildReport(buildUUID string) (*BuildReportResponse, error)
 }
 
 type builderServiceImpl struct {
@@ -23,6 +24,17 @@ type builderServiceImpl struct {
 // RegisterResponse - contains UUID of registered object.
 type RegisterResponse struct {
 	UUID string `json:"uuid"`
+}
+
+// BuildReportResponse - contains detailed report about finished build
+type BuildReportResponse struct {
+	UUID        string `json:"uuid"`
+	Status      string `json:"status"`
+	Exception   string `json:"exception"`
+	BuildLog    string `json:"build_log"`
+	TestsLog    string `json:"tests_log"`
+	TestsPassed int64  `json:"tests_passed"`
+	TestsTotal  int64  `json:"tests_total"`
 }
 
 // NewBuilderService - creates new builder service accessor
@@ -62,5 +74,14 @@ func (bs *builderServiceImpl) RegisterTestCase(testUUID string, assignmentUUID s
 		return nil, err
 	}
 	return &result, nil
+}
 
+// GetBuildReport - queries report for the finished build
+func (bs *builderServiceImpl) GetBuildReport(buildUUID string) (*BuildReportResponse, error) {
+	var result BuildReportResponse
+	err := bs.client.Get("build/report/"+buildUUID, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

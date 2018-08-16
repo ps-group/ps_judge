@@ -5,28 +5,30 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"ps-group/judgeevents"
 )
 
 // BuildMaster - reads build tasks from database and passes them to the workers.
 type BuildMaster struct {
-	reports              chan BuildReport
-	stopWorkers          chan struct{}
-	stopListening        chan struct{}
-	workersWaitGroup     *sync.WaitGroup
-	generator            TaskGenerator
-	dbConnector          DatabaseConnector
-	messageRouterFactory MessageRouterFactory
+	reports          chan BuildReport
+	stopWorkers      chan struct{}
+	stopListening    chan struct{}
+	workersWaitGroup *sync.WaitGroup
+	generator        TaskGenerator
+	dbConnector      DatabaseConnector
+	events           judgeevents.BuilderEvents
 }
 
 // NewBuildMaster - creates build master with given database
-func NewBuildMaster(dbConnector DatabaseConnector, messageRouterFactory MessageRouterFactory) *BuildMaster {
+func NewBuildMaster(dbConnector DatabaseConnector, events judgeevents.BuilderEvents) *BuildMaster {
 	var master BuildMaster
 	master.reports = make(chan BuildReport)
 	master.stopWorkers = make(chan struct{})
 	master.stopListening = make(chan struct{})
 	master.generator = newBuildTaskGenerator(dbConnector, master.reports)
 	master.dbConnector = dbConnector
-	master.messageRouterFactory = messageRouterFactory
+	master.events = events
 
 	return &master
 }
@@ -84,11 +86,10 @@ func (master *BuildMaster) processBuildReport(report BuildReport) error {
 }
 
 func (master *BuildMaster) fireBuildFinished(key string, succeed bool) error {
-	router := master.messageRouterFactory.NewMessageRouter()
-	router.DeclareExchange(ExchangeBuildFinished)
-	router.PublishJSON(ExchangeBuildFinished, BuildFinishedEvent{
+	event := judgeevents.BuildFinishedEvent{
 		Key:     key,
 		Succeed: succeed,
-	})
-	return router.Error()
+	}
+	master.events.PublishBuildFinished(event)
+	return master.events.Error()
 }

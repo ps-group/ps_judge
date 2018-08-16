@@ -10,8 +10,6 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/streadway/amqp"
-
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -81,36 +79,4 @@ func NewMySQLConnector(config *Config) DatabaseConnector {
 	connector.Host = config.MySQLHost
 	connector.DatabaseName = config.MySQLDB
 	return &connector
-}
-
-// MessageRouterFactory - creates new message routers
-type MessageRouterFactory interface {
-	NewMessageRouter() *MessageRouter
-}
-
-type messageRouterFactoryImpl struct {
-	socket string
-}
-
-// NewMessageRouterFactory - creates factory that creates routers on given socket
-func NewMessageRouterFactory(socket string) MessageRouterFactory {
-	f := new(messageRouterFactoryImpl)
-	f.socket = socket
-	return f
-}
-
-// NewMessageRouter - creates message router
-func (f *messageRouterFactoryImpl) NewMessageRouter() *MessageRouter {
-	var router MessageRouter
-	router.conn, router.lastError = amqp.Dial(f.socket)
-	if router.lastError == nil {
-		defer func() {
-			if router.channel == nil {
-				router.conn.Close()
-				router.conn = nil
-			}
-		}()
-		router.channel, router.lastError = router.conn.Channel()
-	}
-	return &router
 }

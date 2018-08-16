@@ -7,6 +7,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 
+	"ps-group/judgeevents"
 	"ps-group/restapi"
 )
 
@@ -17,10 +18,10 @@ func main() {
 	}
 
 	databaseConnector := NewMySQLConnector(config)
-	messageRouterFactory := NewMessageRouterFactory(config.AmqpSocket)
+	events := judgeevents.NewBuilderEvents(config.AmqpSocket)
 	context := &apiContext{databaseConnector}
 
-	master := NewBuildMaster(databaseConnector, messageRouterFactory)
+	master := NewBuildMaster(databaseConnector, events)
 	killChan := getKillSignalChan()
 	service := restapi.NewService(restapi.ServiceConfig{
 		RouterConfig: g_routes,

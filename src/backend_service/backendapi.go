@@ -57,7 +57,7 @@ type BriefSolutionInfo struct {
 	AssignmentID    int64  `json:"assignment_id"`
 	AssignmentTitle string `json:"assignment_title"`
 	CommitID        int64  `json:"commit_id"`
-	Score           int    `json:"score"`
+	Score           int64  `json:"score"`
 	BuildStatus     string `json:"build_status"`
 }
 
@@ -217,7 +217,7 @@ func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	solution, err := repository.getSolution(userID, params.AssignmentID)
+	solution, err := repository.getUserAssignmentSolution(userID, params.AssignmentID)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
