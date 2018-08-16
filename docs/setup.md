@@ -26,7 +26,7 @@ After that, you can type `exit` to exit MySQL shell.
 
 Run the following Bash scripts to setup database:
 
-```
+```bash
 scripts/update_builder_model
 scripts/update_frontend_model
 ```
@@ -43,7 +43,13 @@ You can run all services on localhost, but still should assign different ports. 
 * `localhost:8081` for backend service
 * `localhost:8082` for builder service
 
-You can create config files using `scripts/dev_config_master.py`. Just run script and answer a few questions - it will generate all config files automatically.
+You can create config files using wizard script:
+
+```bash
+scripts/dev_config_master.py
+```
+
+Just run script and answer a few questions - it will generate all config files automatically.
 
 ## Run Tests
 
