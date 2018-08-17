@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"ps-group/restapi"
 	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -43,6 +44,11 @@ func (c *apiContext) Close() {
 
 func parseID(req restapi.Request) (int64, error) {
 	return strconv.ParseInt(req.Var("id"), 10, 64)
+}
+
+// CreateResponse - contains ID of the created entity
+type CreateResponse struct {
+	ID int64 `json:"id"`
 }
 
 // UserInfo contains user info response
@@ -321,4 +327,143 @@ func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
 		Description: assignment.Description,
 	}
 	return &restapi.Ok{result}
+}
+
+// CreateContestParams - parameters for the new contest
+type CreateContestParams struct {
+	Title     string    `json:"title"`
+	StartTime time.Time `json:"start_time"`
+	EndTime   time.Time `json:"end_time"`
+}
+
+func createContest(ctx interface{}, req restapi.Request) restapi.Response {
+	var params CreateContestParams
+	err := req.ReadJSON(&params)
+	if err != nil {
+		return &restapi.BadRequest{err}
+	}
+
+	if params.StartTime.After(params.EndTime) {
+		return &restapi.BadRequest{errors.New("contest start time cannot be bigger than end time")}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	model := ContestModel{
+		Title:     params.Title,
+		StartTime: params.StartTime,
+		EndTime:   params.EndTime,
+	}
+	err = repository.createContest(&model)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+	return &restapi.Ok{&CreateResponse{
+		ID: model.ID,
+	}}
+}
+
+// CreateUserParams - parameters for the new user
+type CreateUserParams struct {
+	Username     string   `json:"username"`
+	PasswordHash string   `json:"password_hash"`
+	Roles        []string `json:"roles"`
+	ContestID    int64    `json:"contest_id"`
+}
+
+func createUser(ctx interface{}, req restapi.Request) restapi.Response {
+	var params CreateUserParams
+	err := req.ReadJSON(&params)
+	if err != nil {
+		return &restapi.BadRequest{err}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	model := UserModel{
+		Username:     params.Username,
+		PasswordHash: params.PasswordHash,
+		Roles:        params.Roles,
+		ContestID:    params.ContestID,
+	}
+	err = repository.createUser(&model)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+	return &restapi.Ok{&CreateResponse{
+		ID: model.ID,
+	}}
+}
+
+// CreateAssignmentParams - parameters for the new contest assignment
+type CreateAssignmentParams struct {
+	UUID        string `json:"uuid"`
+	ContestID   int64  `json:"contest_id"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+}
+
+func createAssignment(ctx interface{}, req restapi.Request) restapi.Response {
+	var params CreateAssignmentParams
+	err := req.ReadJSON(&params)
+	if err != nil {
+		return &restapi.BadRequest{err}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	model := AssignmentFullModel{
+		UUID:        params.UUID,
+		ContestID:   params.ContestID,
+		Title:       params.Title,
+		Description: params.Description,
+	}
+	err = repository.createAssignment(&model)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+	return &restapi.Ok{&CreateResponse{
+		ID: model.ID,
+	}}
+}
+
+// CreateTestCaseParams - parameters of the new assignment test case
+type CreateTestCaseParams struct {
+	UUID         string `json:"uuid"`
+	AssignmentID string `json:"assignment_uuid"`
+	Input        string `json:"input"`
+	Expected     string `json:"expected"`
+}
+
+func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
+	var params CreateTestCaseParams
+	err := req.ReadJSON(&params)
+	if err != nil {
+		return &restapi.BadRequest{err}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+
+	_, err = c.builderService.RegisterTestCase(params.UUID, params.AssignmentID, params.Input, params.Expected)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	return &restapi.Ok{nil}
 }

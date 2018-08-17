@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -319,4 +320,65 @@ func (r *BackendRepository) getCommitInfoByUUID(uuid string) (*CommitModel, erro
 func (r *BackendRepository) updateCommit(model *CommitModel) error {
 	_, err := r.query("UPDATE commit SET build_status=?, build_score=? WHERE id=?", model.BuildStatus, model.BuildScore, model.ID)
 	return err
+}
+
+// ContestModel - models contest in database
+type ContestModel struct {
+	ID        int64
+	Title     string
+	StartTime time.Time
+	EndTime   time.Time
+}
+
+// Creates contest and sets ID if succeed
+func (r *BackendRepository) createContest(model *ContestModel) error {
+	stmt, err := r.prepare("INSERT INTO contest (title, start_time, end_time) VALUES (?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	res, err := stmt.Exec(model.Title, model.StartTime, model.EndTime)
+	if err != nil {
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	model.ID = id
+	return nil
+}
+
+// Creates user and sets ID if succeed
+func (r *BackendRepository) createUser(model *UserModel) error {
+	stmt, err := r.prepare("INSERT INTO user (username, password_hash, roles, contest_id) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	res, err := stmt.Exec(model.Username, model.PasswordHash, model.Roles, model.ContestID)
+	if err != nil {
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	model.ID = id
+	return nil
+}
+
+func (r *BackendRepository) createAssignment(model *AssignmentFullModel) error {
+	stmt, err := r.prepare("INSERT INTO assignment (uuid, contest_id, title, article) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	res, err := stmt.Exec(model.UUID, model.ContestID, model.Title, model.Description)
+	if err != nil {
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	model.ID = id
+	return nil
 }

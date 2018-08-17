@@ -41,6 +41,26 @@ var routes = restapi.RouterConfig{
 			"/assignment/{id}",
 			getAssignmentInfo,
 		},
+		restapi.Route{
+			"POST",
+			"/contest/create",
+			createContest,
+		},
+		restapi.Route{
+			"POST",
+			"/user/create",
+			createUser,
+		},
+		restapi.Route{
+			"POST",
+			"/assignment/create",
+			createAssignment,
+		},
+		restapi.Route{
+			"POST",
+			"/testcase/create",
+			createTestCase,
+		},
 	},
 	BackendAPIPrefix,
 }
