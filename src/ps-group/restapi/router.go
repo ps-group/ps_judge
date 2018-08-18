@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,8 +19,7 @@ func newRouter(config RouterConfig, context interface{}) *mux.Router {
 			request := requestImpl{
 				request: r,
 			}
-			response := handler(context, &request)
-			err := response.write(w)
+			err := callMethodHandler(handler, context, &request, w)
 			if err != nil {
 				fields := logrus.Fields{
 					"err":    err,
@@ -48,4 +48,22 @@ func newRouter(config RouterConfig, context interface{}) *mux.Router {
 	}
 
 	return router
+}
+
+// callMethodHandler - invoke handler, writes response, and stops panic if any happens.
+func callMethodHandler(handler MethodHandler, context interface{}, r Request, w http.ResponseWriter) error {
+	var err error
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New("panic occured")
+		}
+	}()
+	err = callMethodHandlerUnsafe(handler, context, r, w)
+	return err
+}
+
+// callMethodHandlerUnsafe - invoke handler and writes response
+func callMethodHandlerUnsafe(handler MethodHandler, context interface{}, r Request, w http.ResponseWriter) error {
+	response := handler(context, r)
+	return response.write(w)
 }
