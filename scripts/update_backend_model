@@ -4,7 +4,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 printf "Enter MySQL user: " && read user
 printf "Enter MySQL password: " && read -s password
-mysql -h localhost -u "$user" --password=$password < "${SCRIPT_DIR}/frontend_model.sql"
-mysql -h localhost -u "$user" --password=$password < "${SCRIPT_DIR}/frontend_sandbox_data.sql"
+mysql -h localhost -u "$user" --password=$password < "${SCRIPT_DIR}/backend_model.sql"
+mysql -h localhost -u "$user" --password=$password < "${SCRIPT_DIR}/backend_sandbox_data.sql"
 password=""
 user=""
