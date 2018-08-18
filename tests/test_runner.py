@@ -16,6 +16,8 @@ class TestScenario:
             'Content-Type': 'application/json'
         }
         response = requests.post(url, data, headers=headers)
+        if len(response.text) == 0:
+            return None
         response_json = response.json()
         self.throw_if_error_response(response_json)
         return response_json

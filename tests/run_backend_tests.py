@@ -135,8 +135,66 @@ class ViewAndCommitScenario(BackendTestScenario):
             assert isinstance(solution['build_status'], str)
         return response
 
+class CreateScenario(BackendTestScenario):
+    def run(self):
+        username = 'Test' + self.create_uuid()
+        password_hash = self.create_uuid()
+        testcase_uuid = self.create_uuid()
+        assignment_uuid = self.create_uuid()
+        timestamp = int(time.time())
+
+        contest_id = self.create_contest('Olympic Games', timestamp, timestamp + 7200)
+        user_id = self.create_user(username, password_hash, ['student'], contest_id)
+        assignment_id = self.create_assignment(assignment_uuid, contest_id, 'A+B Problem', 'Solve A+B Problem')
+        self.create_test_case(testcase_uuid, assignment_id, '1\n2\n', '3\n')
+
+    def create_contest(self, title, start_time, end_time):
+        params = {
+            'title': title,
+            'start_time': start_time,
+            'end_time': end_time
+        }
+        response = self.post_json('contest/create', params)
+        id = response['id']
+        assert isinstance(id, int)
+        return id
+
+    def create_user(self, username, password_hash, roles, contest_id):
+        params = {
+            'username': username,
+            'password_hash': password_hash,
+            'roles': roles,
+            'contest_id': contest_id,
+        }
+        response = self.post_json('user/create', params)
+        id = response['id']
+        assert isinstance(id, int)
+        return id
+
+    def create_assignment(self, uuid, contest_id, title, description):
+        params = {
+            'uuid': uuid,
+            'contest_id': contest_id,
+            'title': title,
+            'description': description
+        }
+        response = self.post_json('assignment/create', params)
+        id = response['id']
+        assert isinstance(id, int)
+        return id
+
+    def create_test_case(self, uuid, assignment_id, input, expected):
+        params = {
+            'uuid': uuid,
+            'assignment_id': assignment_id,
+            'input': input,
+            'expected': expected
+        }
+        self.post_json('testcase/create', params)
+
 if __name__ == "__main__":
     run_test_scenarios([
+        CreateScenario,
         LoginScenario,
         ViewAndCommitScenario,
     ])
