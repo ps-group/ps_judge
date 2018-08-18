@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -106,7 +107,7 @@ func (r *BackendRepository) getUserInfoByUsername(username string) (*UserModel, 
 	user.Username = username
 	var roles []byte
 	err = rows.Scan(&user.ID, &user.PasswordHash, &user.ContestID, &roles)
-	user.Roles = []string{string(roles)}
+	user.Roles = strings.Split(string(roles), ",")
 	if err != nil {
 		return nil, err
 	}
@@ -350,11 +351,13 @@ func (r *BackendRepository) createContest(model *ContestModel) error {
 
 // Creates user and sets ID if succeed
 func (r *BackendRepository) createUser(model *UserModel) error {
-	stmt, err := r.prepare("INSERT INTO user (username, password_hash, roles, contest_id) VALUES (?, ?, ?, ?)")
+	stmt, err := r.prepare("INSERT INTO user (username, password, roles, active_contest_id) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
-	res, err := stmt.Exec(model.Username, model.PasswordHash, model.Roles, model.ContestID)
+
+	roles := []byte(strings.Join(model.Roles, ","))
+	res, err := stmt.Exec(model.Username, model.PasswordHash, roles, model.ContestID)
 	if err != nil {
 		return err
 	}

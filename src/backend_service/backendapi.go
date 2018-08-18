@@ -331,9 +331,9 @@ func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
 
 // CreateContestParams - parameters for the new contest
 type CreateContestParams struct {
-	Title     string    `json:"title"`
-	StartTime time.Time `json:"start_time"`
-	EndTime   time.Time `json:"end_time"`
+	Title     string `json:"title"`
+	StartTime uint64 `json:"start_time"`
+	EndTime   uint64 `json:"end_time"`
 }
 
 func createContest(ctx interface{}, req restapi.Request) restapi.Response {
@@ -343,7 +343,10 @@ func createContest(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.BadRequest{err}
 	}
 
-	if params.StartTime.After(params.EndTime) {
+	startTime := time.Unix(int64(params.StartTime), 0)
+	endTime := time.Unix(int64(params.EndTime), 0)
+
+	if startTime.After(endTime) {
 		return &restapi.BadRequest{errors.New("contest start time cannot be bigger than end time")}
 	}
 
@@ -356,8 +359,8 @@ func createContest(ctx interface{}, req restapi.Request) restapi.Response {
 
 	model := ContestModel{
 		Title:     params.Title,
-		StartTime: params.StartTime,
-		EndTime:   params.EndTime,
+		StartTime: startTime,
+		EndTime:   endTime,
 	}
 	err = repository.createContest(&model)
 	if err != nil {
@@ -445,7 +448,7 @@ func createAssignment(ctx interface{}, req restapi.Request) restapi.Response {
 // CreateTestCaseParams - parameters of the new assignment test case
 type CreateTestCaseParams struct {
 	UUID         string `json:"uuid"`
-	AssignmentID string `json:"assignment_uuid"`
+	AssignmentID int64  `json:"assignment_id"`
 	Input        string `json:"input"`
 	Expected     string `json:"expected"`
 }
@@ -460,7 +463,17 @@ func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
 	c := ctx.(*apiContext)
 	defer c.Close()
 
-	_, err = c.builderService.RegisterTestCase(params.UUID, params.AssignmentID, params.Input, params.Expected)
+	r, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	assignment, err := r.getAssignment(params.AssignmentID)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	_, err = c.builderService.RegisterTestCase(params.UUID, assignment.UUID, params.Input, params.Expected)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
