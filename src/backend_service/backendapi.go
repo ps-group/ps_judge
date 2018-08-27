@@ -1,46 +1,13 @@
 package main
 
 import (
-	"database/sql"
-	"ps-group/restapi"
 	"strconv"
 	"time"
 
+	"ps-group/restapi"
+
 	"github.com/pkg/errors"
 )
-
-type apiContext struct {
-	dbConnector    DatabaseConnector
-	db             *sql.DB
-	builderService BuilderService
-}
-
-func newAPIContext(dbConnector DatabaseConnector, builderService BuilderService) *apiContext {
-	c := new(apiContext)
-	c.dbConnector = dbConnector
-	c.builderService = builderService
-	return c
-}
-
-func (c *apiContext) BuilderAPI() BuilderService {
-	return c.builderService
-}
-
-func (c *apiContext) ConnectDB() (*BackendRepository, error) {
-	db, err := c.dbConnector.Connect()
-	if err != nil {
-		return nil, err
-	}
-	c.db = db
-	return NewBackendRepository(db), nil
-}
-
-func (c *apiContext) Close() {
-	if c.db != nil {
-		c.db.Close()
-		c.db = nil
-	}
-}
 
 func parseID(req restapi.Request) (int64, error) {
 	return strconv.ParseInt(req.Var("id"), 10, 64)
@@ -80,16 +47,25 @@ type LoginUserResponse struct {
 	User    UserInfo `json:"user"`
 }
 
-func loginUser(ctx interface{}, req restapi.Request) restapi.Response {
+type hander func(ctx *apiContext, req restapi.Request) restapi.Response
+
+func toRESTHandler(h hander) restapi.MethodHandler {
+	return func(ctx interface{}, req restapi.Request) restapi.Response {
+		c := ctx.(*apiContext)
+		defer c.Close()
+
+		return h(c, req)
+	}
+}
+
+func loginUser(ctx *apiContext, req restapi.Request) restapi.Response {
 	var params LoginUserParams
 	err := req.ReadJSON(&params)
 	if err != nil {
 		return &restapi.BadRequest{err}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -120,10 +96,8 @@ func loginUser(ctx interface{}, req restapi.Request) restapi.Response {
 	}
 }
 
-func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+func getUserInfo(ctx *apiContext, req restapi.Request) restapi.Response {
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -145,10 +119,8 @@ func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
 	}}
 }
 
-func getUserSolutions(ctx interface{}, req restapi.Request) restapi.Response {
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+func getUserSolutions(ctx *apiContext, req restapi.Request) restapi.Response {
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -204,7 +176,7 @@ type CommitSolutionParams struct {
 	Source       string `json:"source"`
 }
 
-func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
+func commitSolution(ctx *apiContext, req restapi.Request) restapi.Response {
 	userID, err := parseID(req)
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
@@ -216,9 +188,7 @@ func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid JSON")}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -245,7 +215,7 @@ func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	response, err := c.BuilderAPI().RegisterNewBuild(params.UUID, assignment.UUID, params.Language, params.Source)
+	response, err := ctx.BuilderAPI().RegisterNewBuild(params.UUID, assignment.UUID, params.Language, params.Source)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -261,15 +231,13 @@ type AssignmentInfo struct {
 	Title     string `json:"title"`
 }
 
-func getContestAssignments(ctx interface{}, req restapi.Request) restapi.Response {
+func getContestAssignments(ctx *apiContext, req restapi.Request) restapi.Response {
 	contestID, err := parseID(req)
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -301,15 +269,13 @@ type FullAssignmentInfo struct {
 	Description string `json:"description"`
 }
 
-func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
+func getAssignmentInfo(ctx *apiContext, req restapi.Request) restapi.Response {
 	assignmentID, err := parseID(req)
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -336,7 +302,7 @@ type CreateContestParams struct {
 	EndTime   uint64 `json:"end_time"`
 }
 
-func createContest(ctx interface{}, req restapi.Request) restapi.Response {
+func createContest(ctx *apiContext, req restapi.Request) restapi.Response {
 	var params CreateContestParams
 	err := req.ReadJSON(&params)
 	if err != nil {
@@ -350,9 +316,7 @@ func createContest(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.BadRequest{errors.New("contest start time cannot be bigger than end time")}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -379,16 +343,14 @@ type CreateUserParams struct {
 	ContestID    int64    `json:"contest_id"`
 }
 
-func createUser(ctx interface{}, req restapi.Request) restapi.Response {
+func createUser(ctx *apiContext, req restapi.Request) restapi.Response {
 	var params CreateUserParams
 	err := req.ReadJSON(&params)
 	if err != nil {
 		return &restapi.BadRequest{err}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -416,16 +378,14 @@ type CreateAssignmentParams struct {
 	Description string `json:"description"`
 }
 
-func createAssignment(ctx interface{}, req restapi.Request) restapi.Response {
+func createAssignment(ctx *apiContext, req restapi.Request) restapi.Response {
 	var params CreateAssignmentParams
 	err := req.ReadJSON(&params)
 	if err != nil {
 		return &restapi.BadRequest{err}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-	repository, err := c.ConnectDB()
+	repository, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -453,17 +413,14 @@ type CreateTestCaseParams struct {
 	Expected     string `json:"expected"`
 }
 
-func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
+func createTestCase(ctx *apiContext, req restapi.Request) restapi.Response {
 	var params CreateTestCaseParams
 	err := req.ReadJSON(&params)
 	if err != nil {
 		return &restapi.BadRequest{err}
 	}
 
-	c := ctx.(*apiContext)
-	defer c.Close()
-
-	r, err := c.ConnectDB()
+	r, err := ctx.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -473,7 +430,7 @@ func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	_, err = c.builderService.RegisterTestCase(params.UUID, assignment.UUID, params.Input, params.Expected)
+	_, err = ctx.builderService.RegisterTestCase(params.UUID, assignment.UUID, params.Input, params.Expected)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
