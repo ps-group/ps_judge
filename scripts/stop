@@ -1,31 +1,57 @@
-#!/usr/bin/env bash
-set -e
+#!/usr/bin/env python
+#
+# Stops ps-judge services.
+# Script has depenencies, use pip to install them:
+#   sudo pip install psutil
+#
 
-# Usage: killNodeApp <ScriptDirectory>
-killNodeApp() {
-    local PROCESS_LIST=$(ps aux | grep $1 | grep node)
-    if [ $(echo "${PROCESS_LIST}" | wc -l) > 1 ]; then
-        local PID_LIST=$(echo ${PROCESS_LIST} | awk '{print $2}')
-        for pid in ${PID_LIST}; do {
-            echo "kill process ${pid} ($1)"
-            kill ${pid}
-        } done
-    fi
-}
+from __future__ import print_function
+import signal
+import os
+import psutil
 
-# Usage: killNativeApp <AppName>
-killNativeApp() {
-    local PROCESS_LIST=$(ps aux | grep $1 | grep -v grep)
-    if [ $(echo "${PROCESS_LIST}" | wc -l) > 1 ]; then
-        local PID_LIST=$(echo ${PROCESS_LIST} | awk '{print $2}')
-        for pid in ${PID_LIST}; do {
-            echo "kill process ${pid} ($1)"
-            kill ${pid}
-        } done
-    fi
-}
+SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 
-killNodeApp "frontend_server"
-killNativeApp backend_service
-killNativeApp builder_service
-echo "stopped all services"
+def is_node_service(process, service_path):
+    if 'node' in process.name():
+        for arg in process.cmdline():
+            if service_path == arg:
+                return True
+    return False
+
+def is_native_service(process, service_path):
+    cmdline = process.cmdline()
+    if len(cmdline) > 0 and service_path == process.cmdline()[0]:
+        return True
+    return False
+
+def list_psjudge_services():
+    services = []
+    frontend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'src', 'frontend_server', 'index.mjs'))
+    backend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'bin', 'backend_service'))
+    builder_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'bin', 'builder_service'))
+    for proc in psutil.process_iter():
+        if is_node_service(proc, frontend_service_path):
+            services.append(proc)
+        elif is_native_service(proc, backend_service_path):
+            services.append(proc)
+        elif is_native_service(proc, builder_service_path):
+            services.append(proc)
+    return services
+
+def terminate_services(processes):
+    def on_terminate(proc):
+        print("process with pid {0} terminated".format(str(proc.pid)))
+
+    terminate_timeout_sec = 15
+    for p in processes:
+        p.terminate()
+    _, alive = psutil.wait_procs(processes, timeout=terminate_timeout_sec, callback=on_terminate)
+    for p in alive:
+        print('killing process with pid {0}'.format(str(p.pid)))
+        p.kill()
+
+if __name__ == '__main__':
+    processes = list_psjudge_services()
+    terminate_services(processes)
+
