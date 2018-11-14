@@ -1,13 +1,10 @@
 # Project Setup
 
->You need Linux (Ubuntu recommended for development), MySQL, Node.js, Go and RabbitMQ to build and run this project.
-
-## Install Dependencies and Build
-
-* Run Bash script `scripts\install_deps` to install third-party dependencies
-* Run Bash script `scripts\build` to build all services
+>You need Linux (Debian 9 recommended), MySQL, Node.js, Go and RabbitMQ to build and run this project.
 
 ## Setup MySQL
+
+* Run command `sudo apt install mysql-client mysql-server` to install MySQL;
 
 MySQL setup can be done with the following MySQL commands (don't forget to replace `<password>` with password):
 
@@ -45,11 +42,16 @@ You can run all services on localhost, but still should assign different ports. 
 
 You can create config files using wizard script:
 
-```bash
+```python3
 scripts/dev_config_master.py
 ```
 
 Just run script and answer a few questions - it will generate all config files automatically.
+
+## Install Dependencies and Build
+
+* Run Bash script `scripts\install_deps` to install third-party dependencies
+* Run Bash script `scripts\build` to build all services
 
 ## Run Tests
 
