@@ -8,7 +8,7 @@ import time
 from test_runner import TestScenario, run_test_scenarios
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
-BUILDER_API_URL = 'http://localhost:8082/api/v1/'
+BUILDER_API_URL = 'http://localhost:9092/api/v1/'
 PASCAL_SOURCE = """PROGRAM APLUSB;
 VAR
   a, b: INTEGER;

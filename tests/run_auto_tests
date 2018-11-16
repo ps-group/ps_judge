@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_DIR="$(dirname ${SCRIPT_DIR})"
+
+# prepare Database's
+mysql -h localhost -u "psjudge" --password=1234 < "${SCRIPT_DIR}/frontend_test_model.sql"
+mysql -h localhost -u "psjudge" --password=1234 < "${SCRIPT_DIR}/frontend_test_sandbox_data.sql"
+mysql -h localhost -u "psjudge" --password=1234 < "${SCRIPT_DIR}/builder_test_model.sql"
+
+# run, test and close services
+python3 $SCRIPT_DIR/test_services.py
