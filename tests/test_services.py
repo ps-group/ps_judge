@@ -4,8 +4,11 @@ import os
 from subprocess import Popen
 import test_config_master
 
+
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 REPO_DIR = os.path.dirname(SCRIPT_DIR)
+
+os.system("bash " + SCRIPT_DIR + "/update_test_db")
 
 test_config_master.create_test_config()
 
