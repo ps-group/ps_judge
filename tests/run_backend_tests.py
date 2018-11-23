@@ -192,9 +192,12 @@ class CreateScenario(BackendTestScenario):
         }
         self.post_json('testcase/create', params)
 
-if __name__ == "__main__":
+def main():
     run_test_scenarios([
         CreateScenario,
         LoginScenario,
         ViewAndCommitScenario,
     ])
+
+if __name__ == "__main__":
+    main()

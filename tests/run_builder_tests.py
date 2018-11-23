@@ -80,7 +80,10 @@ class RegisterBuildScenario(BuilderTestScenario):
         assert response.get('uuid') == uuid
         return response
 
-if __name__ == "__main__":
+def main():
     run_test_scenarios([
         RegisterBuildScenario
     ])
+
+if __name__ == "__main__":
+    main()
