@@ -82,6 +82,7 @@ export class Server
         {
             const module = await import('./handlers/' + route.handler);
             const hanler = new module.default(this.context, request, response);
+            //console.log("Handler: ", handler);
             await hanler[route.action]();
         }
         catch (error)

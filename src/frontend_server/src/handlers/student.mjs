@@ -21,12 +21,14 @@ export default class StudentHandler extends BaseHandler
 
     async home() 
     {
+        console.log("Student home!");
         if (!await this._fetchStudentUser())
         {
             return;
         }
 
         const userInfo = await this._backend.getUserInfo(this.session.userId);
+        console.log("User info: ", userInfo);
         const infos = [];
         for (const assignment of await this._backend.getContestAssignments(verifyInt(userInfo['contest_id'])))
         {

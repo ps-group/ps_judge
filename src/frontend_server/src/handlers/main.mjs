@@ -18,6 +18,7 @@ export default class MainHandler extends BaseHandler
 
     async index() 
     {
+        console.log('On index!');
         const checked = await this._checkAuth();
         if (checked)
         {
@@ -27,14 +28,18 @@ export default class MainHandler extends BaseHandler
 
     async login()
     {
+        //console.log('On login!');
         if (this.request.method != 'POST')
         {
+            //console.log('Post request!');
             if (this.session.authorized)
             {
+                console.log('Authtorized!');
                 this._redirectAuthorized(this.request);
             }
             else
             {
+                console.log('Not authtorized!');
                 return this._render('./tpl/login.ejs', { loginFailed: false });
             }
         }

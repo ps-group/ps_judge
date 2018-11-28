@@ -13,9 +13,9 @@ INSERT INTO `group` (`name`) VALUES ('test_group');
 SELECT @group_id := id FROM `group` WHERE name='test_group';
 INSERT INTO appointment (group_id, contest_id, start_time, end_time) VALUES (@group_id, @contest_id, '2016-10-10 10:00:00', '2020-10-10 11:00:00');
 
-INSERT INTO user (username, password, roles) VALUES ('psjudge', @adminPasswordHash, 'admin');
-INSERT INTO user (username, password, roles) VALUES ('test_judge', @testPasswordHash, 'judge');
-INSERT INTO user (username, password, roles) VALUES ('test_student', @testPasswordHash, 'student');
+INSERT INTO user (username, password, roles, active_contest_id) VALUES ('psjudge', @adminPasswordHash, 'admin', 1);
+INSERT INTO user (username, password, roles, active_contest_id) VALUES ('test_judge', @testPasswordHash, 'judge', 2);
+INSERT INTO user (username, password, roles, active_contest_id) VALUES ('test_student', @testPasswordHash, 'student', 3);
 SELECT @student_id := id FROM user WHERE username='test_student';
 INSERT INTO group_relation (user_id, group_id) VALUES (@student_id, @group_id);
 
