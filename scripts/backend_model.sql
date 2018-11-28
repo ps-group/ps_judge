@@ -24,9 +24,9 @@ DROP TABLE IF EXISTS `psjudge_frontend`.`user` ;
 
 CREATE TABLE IF NOT EXISTS `psjudge_frontend`.`user` (
   `id` INT NOT NULL AUTO_INCREMENT,
+  `active_contest_id` INT NULL,
   `username` TEXT(64) NOT NULL,
   `password` TEXT(32) NOT NULL,
-  `active_contest_id` INT NULL,
   `roles` SET('admin', 'student', 'judge') NULL,
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC))
