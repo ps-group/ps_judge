@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"strings"
-	"time"
 
 	"github.com/pkg/errors"
 )
@@ -42,18 +41,9 @@ func (r *BackendRepository) prepare(query string) (*sql.Stmt, error) {
 // UserModel - models user info in database
 type UserModel struct {
 	ID           int64
-	ContestID    int64
 	Username     string
 	PasswordHash string
 	Roles        []string
-}
-
-// SolutionModel - models solution in database
-type SolutionModel struct {
-	ID           int64
-	UserID       int64
-	AssignmentID int64
-	Score        int64
 }
 
 // AssignmentInfoModel - models brief info about assignment in database
@@ -73,8 +63,15 @@ type AssignmentFullModel struct {
 	Description string
 }
 
+// ContestModel - models contest in database
+type ContestModel struct {
+	ID         int64
+	Title      string
+	MaxReviews uint
+}
+
 func (r *BackendRepository) getUserInfo(id int64) (*UserModel, error) {
-	rows, err := r.query("SELECT `username`, `password`, `active_contest_id`, `roles` FROM user WHERE `id`=?", id)
+	rows, err := r.query("SELECT `username`, `password`, `roles` FROM user WHERE `id`=?", id)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +82,7 @@ func (r *BackendRepository) getUserInfo(id int64) (*UserModel, error) {
 	var user UserModel
 	user.ID = id
 	var roles []byte
-	err = rows.Scan(&user.Username, &user.PasswordHash, &user.ContestID, &roles)
+	err = rows.Scan(&user.Username, &user.PasswordHash, &roles)
 	user.Roles = []string{string(roles)}
 	if err != nil {
 		return nil, err
@@ -95,7 +92,7 @@ func (r *BackendRepository) getUserInfo(id int64) (*UserModel, error) {
 }
 
 func (r *BackendRepository) getUserInfoByUsername(username string) (*UserModel, error) {
-	rows, err := r.query("SELECT `id`, `password`, `active_contest_id`, `roles` FROM user WHERE `username`=?", username)
+	rows, err := r.query("SELECT `id`, `password`, `roles` FROM user WHERE `username`=?", username)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +103,7 @@ func (r *BackendRepository) getUserInfoByUsername(username string) (*UserModel, 
 	var user UserModel
 	user.Username = username
 	var roles []byte
-	err = rows.Scan(&user.ID, &user.PasswordHash, &user.ContestID, &roles)
+	err = rows.Scan(&user.ID, &user.PasswordHash, &roles)
 	user.Roles = strings.Split(string(roles), ",")
 	if err != nil {
 		return nil, err
@@ -115,23 +112,71 @@ func (r *BackendRepository) getUserInfoByUsername(username string) (*UserModel, 
 	return &user, nil
 }
 
-func (r *BackendRepository) getUserSolutions(userID int64) ([]SolutionModel, error) {
-	var results []SolutionModel
-	rows, err := r.query("SELECT `id`, `assignment_id`, `score` FROM solution WHERE user_id=?", userID)
+func (r *BackendRepository) getUserContestList(userID int64) ([]ContestModel, error) {
+	sql := "SELECT `contest`.`id`, `contest`.`title`, `contest`.`max_reviews`" +
+		" FROM `contest`" +
+		" INNER JOIN `appointment`" +
+		" ON `appointment`.`contest_id`=`contest`.`id` " +
+		" INNER JOIN `group`" +
+		" ON `group`.`id`=`appointment`.`group_id`" +
+		" INNER JOIN `group_relation`" +
+		" ON `group_relation`.`group_id`=`group`.`id`" +
+		" INNER JOIN `user`" +
+		" ON `user`.`id`=`group_relation`.`user_id`" +
+		" WHERE `user`.`id`=?"
+
+	var results []ContestModel
+	rows, err := r.query(sql, userID)
 	if err != nil {
 		return results, err
 	}
 
 	for rows.Next() {
-		var result SolutionModel
+		var result ContestModel
+		err = rows.Scan(&result.ID, &result.Title, &result.MaxReviews)
+		if err != nil {
+			return results, errors.Wrap(err, "failed to scan SQL rows")
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+// DetailedSolutionModel - models solution in database
+type DetailedSolutionModel struct {
+	ID              int64
+	UserID          int64
+	AssignmentID    int64
+	AssignmentTitle string
+	Score           int64
+}
+
+func (r *BackendRepository) getUserContestSolutions(userID int64, contestID int64) ([]DetailedSolutionModel, error) {
+	var results []DetailedSolutionModel
+	rows, err := r.query("SELECT `solution`.`id`, `solution`.`assignment_id`, `solution`.`score`, `assignment`.`title` FROM `solution` LEFT JOIN `assignment` ON `solution`.`assignment_id`=`assignment`.`id` WHERE `solution`.`user_id`=? AND `assignment`.`contest_id`=?", userID, contestID)
+	if err != nil {
+		return results, err
+	}
+
+	for rows.Next() {
+		var result DetailedSolutionModel
 		result.UserID = userID
-		err = rows.Scan(&result.ID, &result.AssignmentID, &result.Score)
+		err = rows.Scan(&result.ID, &result.AssignmentID, &result.Score, &result.AssignmentTitle)
 		if err != nil {
 			return results, errors.Wrap(err, "failed to scan SQL rows")
 		}
 		results = append(results, result)
 	}
 	return results, nil
+}
+
+// SolutionModel - models solution in database
+type SolutionModel struct {
+	ID           int64
+	UserID       int64
+	AssignmentID int64
+	Score        int64
 }
 
 func (r *BackendRepository) getUserAssignmentSolution(userID int64, assignmentID int64) (*SolutionModel, error) {
@@ -323,21 +368,13 @@ func (r *BackendRepository) updateCommit(model *CommitModel) error {
 	return err
 }
 
-// ContestModel - models contest in database
-type ContestModel struct {
-	ID        int64
-	Title     string
-	StartTime time.Time
-	EndTime   time.Time
-}
-
 // Creates contest and sets ID if succeed
 func (r *BackendRepository) createContest(model *ContestModel) error {
-	stmt, err := r.prepare("INSERT INTO contest (title, start_time, end_time) VALUES (?, ?, ?)")
+	stmt, err := r.prepare("INSERT INTO contest (title, max_reviews) VALUES (?, ?)")
 	if err != nil {
 		return err
 	}
-	res, err := stmt.Exec(model.Title, model.StartTime, model.EndTime)
+	res, err := stmt.Exec(model.Title, model.MaxReviews)
 	if err != nil {
 		return err
 	}
@@ -351,13 +388,13 @@ func (r *BackendRepository) createContest(model *ContestModel) error {
 
 // Creates user and sets ID if succeed
 func (r *BackendRepository) createUser(model *UserModel) error {
-	stmt, err := r.prepare("INSERT INTO user (username, password, roles, active_contest_id) VALUES (?, ?, ?, ?)")
+	stmt, err := r.prepare("INSERT INTO user (username, password, roles) VALUES (?, ?, ?)")
 	if err != nil {
 		return err
 	}
 
 	roles := []byte(strings.Join(model.Roles, ","))
-	res, err := stmt.Exec(model.Username, model.PasswordHash, roles, model.ContestID)
+	res, err := stmt.Exec(model.Username, model.PasswordHash, roles)
 	if err != nil {
 		return err
 	}
@@ -375,6 +412,32 @@ func (r *BackendRepository) createAssignment(model *AssignmentFullModel) error {
 		return err
 	}
 	res, err := stmt.Exec(model.UUID, model.ContestID, model.Title, model.Description)
+	if err != nil {
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	model.ID = id
+	return nil
+}
+
+// AppointmentModel - represents appointment which keeps link between group and contest.
+type AppointmentModel struct {
+	ID        int64
+	GroupID   int64
+	ContestID int64
+	StartTime int64
+	EndTime   int64
+}
+
+func (r *BackendRepository) createAppointment(model *AppointmentModel) error {
+	stmt, err := r.prepare("INSERT INTO appointment (group_id, contest_id, start_time, end_time) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		return err
+	}
+	res, err := stmt.Exec(model.GroupID, model.ContestID, model.StartTime, model.EndTime)
 	if err != nil {
 		return err
 	}

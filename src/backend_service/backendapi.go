@@ -15,6 +15,9 @@ type apiContext struct {
 	builderService BuilderService
 }
 
+type valuesMap map[string]interface{}
+type valuesMapList []valuesMap
+
 func newAPIContext(dbConnector DatabaseConnector, builderService BuilderService) *apiContext {
 	c := new(apiContext)
 	c.dbConnector = dbConnector
@@ -42,42 +45,14 @@ func (c *apiContext) Close() {
 	}
 }
 
-func parseID(req restapi.Request) (int64, error) {
-	return strconv.ParseInt(req.Var("id"), 10, 64)
-}
-
-// CreateResponse - contains ID of the created entity
-type CreateResponse struct {
-	ID int64 `json:"id"`
-}
-
-// UserInfo contains user info response
-type UserInfo struct {
-	Username  string   `json:"username"`
-	Roles     []string `json:"roles"`
-	ContestID int64    `json:"contest_id"`
-}
-
-// BriefSolutionInfo - contains brief solution info
-type BriefSolutionInfo struct {
-	AssignmentID    int64  `json:"assignment_id"`
-	AssignmentTitle string `json:"assignment_title"`
-	CommitID        int64  `json:"commit_id"`
-	Score           int64  `json:"score"`
-	BuildStatus     string `json:"build_status"`
+func parseID(req restapi.Request, name string) (int64, error) {
+	return strconv.ParseInt(req.Var(name), 10, 64)
 }
 
 // LoginUserParams - contains user login parameters
 type LoginUserParams struct {
 	Username     string `json:"username"`
 	PasswordHash string `json:"password_hash"`
-}
-
-// LoginUserResponse - contains user login response
-type LoginUserResponse struct {
-	Succeed bool     `json:"succeed"`
-	UserID  int64    `json:"user_id"`
-	User    UserInfo `json:"user"`
 }
 
 func loginUser(ctx interface{}, req restapi.Request) restapi.Response {
@@ -100,24 +75,19 @@ func loginUser(ctx interface{}, req restapi.Request) restapi.Response {
 	}
 
 	if info != nil && info.PasswordHash == params.PasswordHash {
-		return &restapi.Ok{
-			LoginUserResponse{
-				Succeed: true,
-				UserID:  info.ID,
-				User: UserInfo{
-					Username:  info.Username,
-					Roles:     info.Roles,
-					ContestID: info.ContestID,
-				},
+		return &restapi.Ok{valuesMap{
+			"succeed": true,
+			"user_id": info.ID,
+			"user": valuesMap{
+				"username": info.Username,
+				"roles":    info.Roles,
 			},
-		}
+		}}
 	}
 
-	return &restapi.Unauthorized{
-		LoginUserResponse{
-			Succeed: false,
-		},
-	}
+	return &restapi.Unauthorized{valuesMap{
+		"succeed": false,
+	}}
 }
 
 func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
@@ -128,7 +98,7 @@ func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	userID, err := parseID(req)
+	userID, err := parseID(req, "id")
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
@@ -138,14 +108,13 @@ func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	return &restapi.Ok{UserInfo{
-		Username:  info.Username,
-		Roles:     info.Roles,
-		ContestID: info.ContestID,
+	return &restapi.Ok{valuesMap{
+		"username": info.Username,
+		"roles":    info.Roles,
 	}}
 }
 
-func getUserSolutions(ctx interface{}, req restapi.Request) restapi.Response {
+func getUserContestList(ctx interface{}, req restapi.Request) restapi.Response {
 	c := ctx.(*apiContext)
 	defer c.Close()
 	repository, err := c.ConnectDB()
@@ -153,45 +122,62 @@ func getUserSolutions(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	userID, err := parseID(req)
+	userID, err := parseID(req, "user_id")
 	if err != nil {
-		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
+		return &restapi.BadRequest{errors.Wrap(err, "invalid user_id")}
 	}
 
-	solutions, err := repository.getUserSolutions(userID)
-	if err != nil {
-		return &restapi.InternalError{err}
-	}
-
-	userInfo, err := repository.getUserInfo(userID)
+	contests, err := repository.getUserContestList(userID)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
 
-	assignments, err := repository.getContestAssignments(userInfo.ContestID)
+	var results valuesMapList
+	for _, contest := range contests {
+		results = append(results, valuesMap{
+			"id":    contest.ID,
+			"title": contest.Title,
+		})
+	}
+	return &restapi.Ok{results}
+}
+
+func getUserContestSolutions(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
 
-	assignmentTitles := make(map[int64]string)
-	for _, assignment := range assignments {
-		assignmentTitles[assignment.ID] = assignment.Title
+	userID, err := parseID(req, "user_id")
+	if err != nil {
+		return &restapi.BadRequest{errors.Wrap(err, "invalid user_id")}
 	}
 
-	var results []BriefSolutionInfo
+	contestID, err := parseID(req, "contest_id")
+	if err != nil {
+		return &restapi.BadRequest{errors.Wrap(err, "invalid contest_id")}
+	}
+
+	solutions, err := repository.getUserContestSolutions(userID, contestID)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	var results valuesMapList
 	for _, solution := range solutions {
 		commit, err := repository.getLastCommit(solution.ID)
 		if err != nil {
 			return &restapi.InternalError{err}
 		}
-		result := BriefSolutionInfo{
-			AssignmentID:    solution.AssignmentID,
-			AssignmentTitle: assignmentTitles[solution.AssignmentID],
-			Score:           solution.Score,
-			CommitID:        commit.ID,
-			BuildStatus:     commit.BuildStatus,
-		}
-		results = append(results, result)
+		results = append(results, valuesMap{
+			"assignment_id":    solution.AssignmentID,
+			"assignment_title": solution.AssignmentTitle,
+			"score":            solution.Score,
+			"commit_id":        commit.ID,
+			"build_status":     commit.BuildStatus,
+		})
 	}
 	return &restapi.Ok{results}
 }
@@ -205,7 +191,7 @@ type CommitSolutionParams struct {
 }
 
 func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
-	userID, err := parseID(req)
+	userID, err := parseID(req, "id")
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
@@ -253,16 +239,8 @@ func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
 	return &restapi.Ok{response}
 }
 
-// AssignmentInfo - brief info about assignment
-type AssignmentInfo struct {
-	ID        int64  `json:"id"`
-	ContestID int64  `json:"contest_id"`
-	UUID      string `json:"uuid"`
-	Title     string `json:"title"`
-}
-
 func getContestAssignments(ctx interface{}, req restapi.Request) restapi.Response {
-	contestID, err := parseID(req)
+	contestID, err := parseID(req, "id")
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
@@ -279,30 +257,20 @@ func getContestAssignments(ctx interface{}, req restapi.Request) restapi.Respons
 		return &restapi.InternalError{err}
 	}
 
-	var infos []AssignmentInfo
+	var infos valuesMapList
 	for _, assignment := range assignments {
-		info := AssignmentInfo{
-			ID:        assignment.ID,
-			ContestID: assignment.ContestID,
-			UUID:      assignment.UUID,
-			Title:     assignment.Title,
-		}
-		infos = append(infos, info)
+		infos = append(infos, valuesMap{
+			"id":         assignment.ID,
+			"contest_id": assignment.ContestID,
+			"uuid":       assignment.UUID,
+			"title":      assignment.Title,
+		})
 	}
 	return &restapi.Ok{infos}
 }
 
-// FullAssignmentInfo - result of assignment info request
-type FullAssignmentInfo struct {
-	ID          int64  `json:"id"`
-	ContestID   int64  `json:"contest_id"`
-	UUID        string `json:"uuid"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-}
-
 func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
-	assignmentID, err := parseID(req)
+	assignmentID, err := parseID(req, "id")
 	if err != nil {
 		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
 	}
@@ -319,21 +287,20 @@ func getAssignmentInfo(ctx interface{}, req restapi.Request) restapi.Response {
 		return &restapi.InternalError{err}
 	}
 
-	result := FullAssignmentInfo{
-		ID:          assignmentID,
-		ContestID:   assignment.ContestID,
-		UUID:        assignment.UUID,
-		Title:       assignment.Title,
-		Description: assignment.Description,
+	result := valuesMap{
+		"id":          assignmentID,
+		"contest_id":  assignment.ContestID,
+		"uuid":        assignment.UUID,
+		"title":       assignment.Title,
+		"description": assignment.Description,
 	}
 	return &restapi.Ok{result}
 }
 
 // CreateContestParams - parameters for the new contest
 type CreateContestParams struct {
-	Title     string `json:"title"`
-	StartTime uint64 `json:"start_time"`
-	EndTime   uint64 `json:"end_time"`
+	Title      string `json:"title"`
+	MaxReviews uint   `json:"max_reviews"`
 }
 
 func createContest(ctx interface{}, req restapi.Request) restapi.Response {
@@ -341,13 +308,6 @@ func createContest(ctx interface{}, req restapi.Request) restapi.Response {
 	err := req.ReadJSON(&params)
 	if err != nil {
 		return &restapi.BadRequest{err}
-	}
-
-	startTime := time.Unix(int64(params.StartTime), 0)
-	endTime := time.Unix(int64(params.EndTime), 0)
-
-	if startTime.After(endTime) {
-		return &restapi.BadRequest{errors.New("contest start time cannot be bigger than end time")}
 	}
 
 	c := ctx.(*apiContext)
@@ -358,16 +318,15 @@ func createContest(ctx interface{}, req restapi.Request) restapi.Response {
 	}
 
 	model := ContestModel{
-		Title:     params.Title,
-		StartTime: startTime,
-		EndTime:   endTime,
+		Title:      params.Title,
+		MaxReviews: params.MaxReviews,
 	}
 	err = repository.createContest(&model)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
-	return &restapi.Ok{&CreateResponse{
-		ID: model.ID,
+	return &restapi.Ok{&valuesMap{
+		"id": model.ID,
 	}}
 }
 
@@ -376,7 +335,6 @@ type CreateUserParams struct {
 	Username     string   `json:"username"`
 	PasswordHash string   `json:"password_hash"`
 	Roles        []string `json:"roles"`
-	ContestID    int64    `json:"contest_id"`
 }
 
 func createUser(ctx interface{}, req restapi.Request) restapi.Response {
@@ -397,14 +355,13 @@ func createUser(ctx interface{}, req restapi.Request) restapi.Response {
 		Username:     params.Username,
 		PasswordHash: params.PasswordHash,
 		Roles:        params.Roles,
-		ContestID:    params.ContestID,
 	}
 	err = repository.createUser(&model)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
-	return &restapi.Ok{&CreateResponse{
-		ID: model.ID,
+	return &restapi.Ok{&valuesMap{
+		"id": model.ID,
 	}}
 }
 
@@ -440,8 +397,8 @@ func createAssignment(ctx interface{}, req restapi.Request) restapi.Response {
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
-	return &restapi.Ok{&CreateResponse{
-		ID: model.ID,
+	return &restapi.Ok{&valuesMap{
+		"id": model.ID,
 	}}
 }
 
@@ -463,12 +420,12 @@ func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
 	c := ctx.(*apiContext)
 	defer c.Close()
 
-	r, err := c.ConnectDB()
+	repo, err := c.ConnectDB()
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
 
-	assignment, err := r.getAssignment(params.AssignmentID)
+	assignment, err := repo.getAssignment(params.AssignmentID)
 	if err != nil {
 		return &restapi.InternalError{err}
 	}
@@ -479,4 +436,49 @@ func createTestCase(ctx interface{}, req restapi.Request) restapi.Response {
 	}
 
 	return &restapi.Ok{nil}
+}
+
+// CreateAppointmentParams - parameters for the new contest assignment
+type CreateAppointmentParams struct {
+	GroupID   int64 `json:"group_id"`
+	ContestID int64 `json:"contest_id"`
+	StartTime int64 `json:"start_time"`
+	EndTime   int64 `json:"end_time"`
+}
+
+func assignGroupToContest(ctx interface{}, req restapi.Request) restapi.Response {
+	var params CreateAppointmentParams
+	err := req.ReadJSON(&params)
+	if err != nil {
+		return &restapi.BadRequest{err}
+	}
+
+	startTime := time.Unix(int64(params.StartTime), 0)
+	endTime := time.Unix(int64(params.EndTime), 0)
+	if startTime.After(endTime) {
+		return &restapi.BadRequest{errors.New("contest start time cannot be bigger than end time")}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+
+	repo, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	model := AppointmentModel{
+		GroupID:   params.GroupID,
+		ContestID: params.ContestID,
+		StartTime: params.StartTime,
+		EndTime:   params.EndTime,
+	}
+	repo.createAppointment(&model)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	return &restapi.Ok{&valuesMap{
+		"id": model.ID,
+	}}
 }

@@ -19,7 +19,7 @@ BEGIN
 END.
 """
 
-TEST_USERNAME = 'Martin'
+TEST_USERNAME = 'test_student'
 TEST_PASSWORD_HASH = '4476d6a3edee189e699ca3c2cfd80905abc8d999954a08d1c504e6ae437cc28dd4194a1051d84bf5cb2cfc19e09e339ce7f2ff83fec56b07ee39ec2205c2adba'
 
 class BackendTestScenario(TestScenario):
@@ -37,19 +37,18 @@ class LoginScenario(BackendTestScenario):
 
     def login_ok(self):
         response = self.post_json('user/login', {
-            'username': TEST_USERNAME,
+            'username': 'test_student',
             'password_hash': TEST_PASSWORD_HASH
         })
+        print("response=", response)
         assert response['succeed'] == True
-        assert response['user']['username'] == TEST_USERNAME
+        assert response['user']['username'] == 'test_student'
+        assert response['user']['roles'][0] == 'student'
         assert int(response['user_id']) != 0
-        assert int(response['user']['contest_id']) != 0
         return response
 
     def get_user_info(self, user_id):
-        response = self.get_json('user/{0}/info'.format(str(user_id)))
-        assert int(response['contest_id']) != 0
-        return response
+        return self.get_json('user/{0}/info'.format(str(user_id)))
 
     def login_bad_password(self):
         response = self.post_json('user/login', {
@@ -69,7 +68,8 @@ class ViewAndCommitScenario(BackendTestScenario):
     def run(self):
         login_info = self.login_ok()
         user_id = login_info['user_id']
-        contest_id = login_info['user']['contest_id']
+        contests = self.get_user_contest_list(user_id)
+        contest_id = contests[0]['id']
         assignments = self.view_contest(contest_id)
         assignment = self.get_aplusb_assignment(assignments)
         assignment_id = assignment['id']
@@ -77,7 +77,7 @@ class ViewAndCommitScenario(BackendTestScenario):
 
         build_uuid = self.commit_aplusb_solution(user_id, assignment_id)
         
-        solutions = self.get_user_solutions(user_id)
+        solutions = self.get_user_solutions(user_id, contest_id)
         solution = self.get_solution_of_assignment(solutions, assignment_id)
         assert solution['assignment_title'] == 'A+B Problem'
 
@@ -86,6 +86,13 @@ class ViewAndCommitScenario(BackendTestScenario):
             'username': TEST_USERNAME,
             'password_hash': TEST_PASSWORD_HASH
         })
+        return response
+
+    def get_user_contest_list(self, user_id):
+        response = self.get_json('user/{0}/contest/list'.format(str(user_id)))
+        assert len(response) > 0
+        assert isinstance(response[0]["title"], str)
+        assert isinstance(response[0]["id"], int)
         return response
 
     def get_solution_of_assignment(self, solutions, assignment_id):
@@ -125,8 +132,8 @@ class ViewAndCommitScenario(BackendTestScenario):
         assert assignment['uuid'] == response['uuid']
         assert isinstance(response['description'], str)
 
-    def get_user_solutions(self, user_id):
-        response = self.get_json('user/{0}/solutions'.format(str(user_id)))
+    def get_user_solutions(self, user_id, contest_id):
+        response = self.get_json('user/{user_id}/contest/{contest_id}/solutions'.format(user_id=str(user_id), contest_id=str(contest_id)))
         for solution in response:
             assert isinstance(solution['assignment_id'], int)
             assert isinstance(solution['assignment_title'], str)
