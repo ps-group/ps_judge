@@ -18,11 +18,17 @@ import { verifyString } from '../validate.mjs';
  */
 
 /**
+ * @typedef {Object} ContestInfo
+ * @property {number} id
+ * @property {string} title
+ */
+
+/**
  * @typedef {Object} BriefSolutionInfo
  * @property {number} assignment_id
  * @property {string} assignment_title
- * @property {number} commit_id
  * @property {number} score
+ * @property {number} commit_id
  * @property {string} build_status
  */
 
@@ -109,6 +115,28 @@ export default class BackendApi
             'source': source,
         });
         assert(verifyString(response['uuid']) == uuid);
+    }
+
+    /**
+     * @param userId 
+     * @returns {!Promise<Array<ContestInfo>>}
+     */
+    getUserContestList(userId)
+    {
+        userId = verifyInt(userId);
+        return this._client.sendGet(`user/${userId}/contest/list`);
+    }
+
+    /**
+     * @param {number} userId
+     * @param {number} contestId 
+     * @returns {!Promise<Array<BriefSolutionInfo>>}
+     */
+    getUserContestSolutions(userId, contestId)
+    {
+        userId = verifyInt(userId);
+        contestId = verifyInt(contestId);
+        return  this._client.sendGet(`user/${userId}/contest/${contestId}/solutions`)
     }
 
     /**

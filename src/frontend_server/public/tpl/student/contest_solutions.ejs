@@ -1,0 +1,32 @@
+<%- include('../layout/head', {title: 'Решения'}) %>
+<div class="wrapper">
+    <%- include('../layout/student_navbar') %>
+    <div id="content">
+        <% const contest = page.content.contest %>
+        <h2>Отправленные решения:</h2>
+        <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Задача</th>
+                <th scope="col">Баллы</th>
+                <th scope="col">Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% for (let solution of contest.solutions) { %>
+            <tr>
+                <td><a href='/contest/<%= contest.id %>/assignment/<%= solution.assignment_id %>'><%=solution.assignment_title%></a></td>
+                <td><%=solution.score%></td>
+                <td><a href="/student/commit?id=<%=solution.commit_id%>"><%=solution.build_status%></a></td>
+            </tr>
+            <% } %>
+            <tr>
+                <td></td>
+                <th>Общий балл:</th>
+                <td><%= contest.totalScore %></td>
+            </tr>
+        </tbody>
+        </table>
+    </div>
+</div>
+<%- include('../layout/tail') %>

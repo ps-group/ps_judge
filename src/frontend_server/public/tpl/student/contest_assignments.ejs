@@ -1,0 +1,14 @@
+<%- include('../layout/head', {title: 'Задачи '}) %>
+<div class="wrapper">
+  <%- include('../layout/student_navbar') %>
+  <div id="content">
+    <% const contest = page.content.contest %>
+    <h2>Список заданий:</h2>
+      <ol>
+        <% for (let assignment of contest.assignments) { %>
+          <li><a href='/contest/<%= contest.id %>/assignment/<%= assignment.id %>'><%= assignment.title %></a></li>
+        <% } %>
+      </ol>
+  </div>
+</div>
+<%- include('../layout/tail') %>

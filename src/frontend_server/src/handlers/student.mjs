@@ -7,6 +7,17 @@ import { STUDENT_SOLUTIONS_URL } from '../routes';
 import { ROLE_STUDENT } from '../data/roles';
 import { verifyInt, verifyString } from '../validate.mjs';
 
+export function convertMarkdown(markdown)
+{
+    const converter = new showdown.Converter();
+    return converter.makeHtml(markdown);
+}
+
+export function create_uuid()
+{
+    return uuidv1().split('-').join('');
+}
+
 export default class StudentHandler extends BaseHandler
 {
     /**
@@ -19,7 +30,7 @@ export default class StudentHandler extends BaseHandler
         super(context, request, response);
     }
 
-    async home() 
+    async home(userName) 
     {
         if (!await this._fetchStudentUser())
         {
@@ -27,8 +38,31 @@ export default class StudentHandler extends BaseHandler
         }
 
         const userInfo = await this._backend.getUserInfo(this.session.userId);
-        const infos = [];
-        for (const assignment of await this._backend.getContestAssignments(verifyInt(userInfo['contest_id'])))
+        const contests = [];
+        //const infos = [];
+
+        for (const contest of await this._backend.getUserContestList(verifyInt(userInfo['id']))) 
+        {
+            const assignments = [];
+
+            for (const assignment of await this._backend.getContestAssignments(verifyInt(contest['id'])))
+            {
+                assignments.push({
+                    'id': verifyInt(assignment['id']),
+                    //'contest_id': verifyInt(assignment['contest_id']),
+                    'uuid': verifyString(assignment['uuid']),
+                    'title': verifyString(assignment['title']),
+                });
+            }
+
+            contests.push({
+                'id': verifyInt(contest['id']),
+                'title': verifyString(contest['title']),
+                'assignments': assignments,
+            });
+        }
+
+        /*for (const assignment of await this._backend.getContestAssignments(verifyInt(userInfo['contest_id'])))
         {
             infos.push({
                 'id': verifyInt(assignment['id']),
@@ -36,10 +70,11 @@ export default class StudentHandler extends BaseHandler
                 'uuid': verifyString(assignment['uuid']),
                 'title': verifyString(assignment['title']),
             });
-        }
+        }*/
         const options = {
             'page': {
-                'assignments': infos
+                'user_id': verifyInt(userInfo['id']),
+                'contests': contests
             }
         };
         return this._render('./tpl/student_home.ejs', options);
@@ -56,11 +91,23 @@ export default class StudentHandler extends BaseHandler
         const assignmentId = verifyInt(parseInt(query["id"]));
         const info = await this._backend.getAssignmentInfo(assignmentId);
         const articleHtml = this._convertMarkdown(verifyString(info['description']));
+
+        const contests = [];
+
+        for (const contest of await this._backend.getUserContestList(this.session.userId)) 
+        {
+            contests.push({
+                'id': verifyInt(contest['id']),
+                'title': verifyString(contest['title']),
+            });
+        }
+
         const options = {
             'page': {
                 'assignment_id': verifyInt(info['id']),
                 'title': verifyString(info['title']),
-                'assignment_info': articleHtml
+                'assignment_info': articleHtml,
+                'contests': contests,
             }
         };
         return this._render('./tpl/student_assignment.ejs', options);
@@ -73,8 +120,33 @@ export default class StudentHandler extends BaseHandler
             return;
         }
 
-        const infos = [];
-        for (let solution of await this._backend.getUserSolutions(this.session.userId))
+        //const infos = [];
+        const contests = [];
+
+        for (const contest of await this._backend.getUserContestList(this.session.userId)) 
+        {
+            const solutions = [];
+
+            for (const solution of await this._backend.getUserContestSolutions(this.session.userId, verifyInt(contest['id'])))
+            {
+                solutions.push({
+                    'assignment_id': verifyInt(solution['assignment_id']),
+                    'assignment_title': verifyString(solution['assignment_title']),
+                    'commit_id': verifyInt(solution['commit_id']),
+                    'score': verifyInt(solution['score']),
+                    'build_status': verifyString(solution['build_status']),
+                });
+            }
+            
+            contests.push({
+                'id': verifyInt(contest['id']),
+                'title': verifyString(contest['title']),
+                'solutions': solutions,
+            });
+
+        }
+
+        /*for (let solution of await this._backend.getUserSolutions(this.session.userId))
         {
             infos.push({
                 'assignment_id': verifyInt(solution['assignment_id']),
@@ -83,10 +155,11 @@ export default class StudentHandler extends BaseHandler
                 'score': verifyInt(solution['score']),
                 'build_status': verifyString(solution['build_status']),
             });
-        }
+        }*/
         const options = {
             'page': {
-                'solutions': infos
+                //'solutions': infos
+                'contests': contests,
             }
         };
         return this._render('./tpl/student_solutions.ejs', options);

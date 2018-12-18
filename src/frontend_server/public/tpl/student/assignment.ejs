@@ -1,0 +1,33 @@
+<% const assignment = page.content.assignment %>
+<%- include('../layout/head', {title: assignment.title}) %>
+<div class="wrapper">
+  <%- include('../layout/student_navbar') %>
+  <div id="content">
+    <article>
+      <h1><%= assignment.title %></h1>
+      <%- assignment.info %>
+    </article>
+    <h2>Отправка решения на проверку</h2>
+    <form action="/student/commit" method="post">
+      <input type="hidden" name="contestId" value="<%= page.content.contestId %>">
+      <input type="hidden" name="assignmentId" value="<%= assignment.id %>">
+      <div class="alert alert-info" role="alert">
+        <span>Как только составите решение, скопируйте его исходный код, укажите язык и нажмите "Отправить"</span>
+      </div>
+      <div class="form-group">
+        <textarea class="text-monospace" name="source" cols="60" rows="10" wrap="soft"></textarea>
+      </div>
+      <h4>Укажите язык программирования</h4>
+      <div class="form-group">
+        <div class="radio">
+          <label><input type="radio" name="language" value="pascal" checked>&nbsp;Pascal</input></label>
+        <div class="radio">
+        </div>
+          <label><input type="radio" name="language" value="c++">&nbsp;C++</input></label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-default btn-primary">Отправить</button>
+    </form>
+  </div>
+</div>
+<%- include('../layout/tail') %>
