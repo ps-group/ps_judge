@@ -27,7 +27,8 @@ def is_native_service(process, service_path):
 
 def list_psjudge_services():
     services = []
-    frontend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'src', 'frontend_server', 'index.mjs'))
+    #frontend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'src', 'frontend_server', 'index.mjs'))
+    frontend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'src', 'frontend_server', 'app.mjs'))
     backend_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'bin', 'backend_service'))
     builder_service_path = os.path.normpath(os.path.join(SCRIPT_DIR, '..', 'bin', 'builder_service'))
     for proc in psutil.process_iter():
