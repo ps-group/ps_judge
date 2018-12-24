@@ -182,6 +182,27 @@ func getUserContestSolutions(ctx interface{}, req restapi.Request) restapi.Respo
 	return &restapi.Ok{results}
 }
 
+func getContestResults(ctx interface{}, req restapi.Request) restapi.Response {
+	contestID, err := parseID(req, "id")
+	if err != nil {
+		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	results, err := repository.getContestResults(contestID)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	return &restapi.Ok{results}
+}
+
 // CommitSolutionParams - parameters to commit solution
 type CommitSolutionParams struct {
 	UUID         string `json:"uuid"`

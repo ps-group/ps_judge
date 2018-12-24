@@ -181,4 +181,13 @@ export default class BackendApi
         commitId = verifyInt(commitId);
         return await this._client.sendGet(`commit/${commitId}/report`)
     }
+
+    /**
+     * @param {number} contestId
+     */
+    async getContestResults(contestId)
+    {
+        contestId = verifyInt(contestId);
+        return await this._client.sendGet(`contest/${contestId}/results`)
+    }
 }

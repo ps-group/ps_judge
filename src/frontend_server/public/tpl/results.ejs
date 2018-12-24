@@ -1,0 +1,24 @@
+<%- include('layout/head', {title: 'Результаты'}) %>
+<div class="wrapper">
+    <%- include('layout/student_navbar') %>
+    <div id="content">
+        <% const contest = page.content.contest %>
+        <h2>Таблица результатов:</h2>
+        <table class="table">
+        <thead>
+            <th></th>
+            <% for (let result of contest.results) { %>
+            <th scope="col"><%= result.AssignmentTitle %></th>
+            <% } %>
+        </thead>
+        <tbody>
+            <% for (let result of contest.results) { %>
+            <tr>
+                <th scope="row"><%= result.Username %></th>
+            </tr>
+            <% } %>
+        </tbody>
+        </table>
+    </div>
+</div>
+<%- include('layout/tail') %>

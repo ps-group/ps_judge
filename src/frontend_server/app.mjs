@@ -239,6 +239,31 @@ app.get('/student/commit/:commitId', async(req, res) => {
     return res.render('tpl/student/commit.ejs', options);
 });
 
+app.get('/contest/:contestId/results', async(req, res) => {
+    const contests = await getUserContests(req.session.userId);
+
+    const contestId = parseInt(verifyString(req.params.contestId));
+    
+    const results = await backendApi.getContestResults(contestId);
+
+    console.log(results);
+
+    const options = {
+        'page': {
+            'navbar': {
+                'contests': contests,
+            },
+            'content': {
+                'contest': {
+                    'results' : results,
+                }
+            }
+        }
+    };
+
+    return res.render('tpl/results.ejs', options);
+});
+
 const server = app.listen(config.port, (error) => {
     if (error) return console.log(`Error: ${error}`);
 
