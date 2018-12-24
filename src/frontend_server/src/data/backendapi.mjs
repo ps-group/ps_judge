@@ -49,6 +49,17 @@ import { verifyString } from '../validate.mjs';
   * @property {string} description
   */
 
+  /**
+   * @typedef {Object} CommitReport
+   * @property {string} uuid
+   * @property {string} status
+   * @property {string} exception
+   * @property {string} build_log
+   * @property {string} tests_log
+   * @property {number} tests_passed
+   * @property {number} tests_total
+   */
+
 export default class BackendApi
 {
     /**
@@ -159,5 +170,15 @@ export default class BackendApi
     {
         assignmentId = verifyInt(assignmentId);
         return await this._client.sendGet(`assignment/${assignmentId}`);
+    }
+
+    /**
+     * @param {number} commitId
+     * @returns {CommitReport}
+     */
+    async getCommitReport(commitId)
+    {
+        commitId = verifyInt(commitId);
+        return await this._client.sendGet(`commit/${commitId}/report`)
     }
 }

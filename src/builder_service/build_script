@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export GOPATH="${SCRIPT_DIR}/../.."
+mkdir -p "${GOPATH}/bin"
+(cd "${GOPATH}/bin" && go build -gcflags=all="-N -l" ../src/builder_service)

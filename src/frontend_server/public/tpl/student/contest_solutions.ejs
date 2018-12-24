@@ -17,7 +17,7 @@
             <tr>
                 <td><a href='/contest/<%= contest.id %>/assignment/<%= solution.assignment_id %>'><%=solution.assignment_title%></a></td>
                 <td><%=solution.score%></td>
-                <td><a href="/student/commit?id=<%=solution.commit_id%>"><%=solution.build_status%></a></td>
+                <td><a href="/student/commit/<%=solution.commit_id%>"><%=solution.build_status%></a></td>
             </tr>
             <% } %>
             <tr>

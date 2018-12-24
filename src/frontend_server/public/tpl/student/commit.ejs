@@ -1,0 +1,33 @@
+<%- include('../layout/head', {title: 'Отчет о сборке'}) %>
+<div class="wrapper">
+    <%- include('../layout/student_navbar') %>
+    <div id="content">
+        <h2>Отчет о сборке:</h2>
+        <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Статус</th>
+                <th scope="col">Логи сборки</th>
+                <th scope="col">Логи тестов</th>
+                <th scope="col">Тестов пройдено</th>
+                <th scope="col">Тестов всего</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% const commit = page.content.commit %>
+            <tr>
+                <td><%= commit.status %></td>
+                <td>
+                    <textarea readonly class="form-control" rows="9" cols="60"><%= commit.buildLog %></textarea>
+                </td>
+                <td>
+                    <textarea readonly class="form-control" rows="9" cols="40"><%= commit.testsLog %></textarea>
+                </td>
+                <td><%= commit.testsPassed %></td>
+                <td><%= commit.testsTotal %></td>
+            </tr>
+        </tbody>
+        </table>
+    </div>
+</div>
+<%- include('../layout/tail') %>

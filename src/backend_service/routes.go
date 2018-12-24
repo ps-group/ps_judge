@@ -38,6 +38,11 @@ var routes = restapi.RouterConfig{
 		},
 		restapi.Route{
 			"GET",
+			"/commit/{id}/report",
+			getCommitReport,
+		},
+		restapi.Route{
+			"GET",
 			"/contest/{id}/assignments",
 			getContestAssignments,
 		},

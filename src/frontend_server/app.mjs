@@ -212,6 +212,33 @@ app.post('/student/commit', async(req, res) => {
     await res.redirect(`/student/contest/${contestId}/solutions`);
 });
 
+app.get('/student/commit/:commitId', async(req, res) => {
+    const contests = await getUserContests(req.session.userId);
+
+    const commitId = parseInt(verifyString(req.params.commitId));
+
+    const report = await backendApi.getCommitReport(commitId);
+
+    const options = {
+        'page': {
+            'navbar': {
+                'contests': contests,
+            },
+            'content': {
+                'commit' : {
+                    'status': verifyString(report['status']),
+                    'buildLog': verifyString(report['build_log']),
+                    'testsLog': verifyString(report['tests_log']),
+                    'testsPassed': verifyInt(report['tests_passed']),
+                    'testsTotal': verifyInt(report['tests_total']),   
+                }
+            }
+        }
+    };
+
+    return res.render('tpl/student/commit.ejs', options);
+});
+
 const server = app.listen(config.port, (error) => {
     if (error) return console.log(`Error: ${error}`);
 

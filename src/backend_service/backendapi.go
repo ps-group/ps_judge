@@ -239,6 +239,32 @@ func commitSolution(ctx interface{}, req restapi.Request) restapi.Response {
 	return &restapi.Ok{response}
 }
 
+func getCommitReport(ctx interface{}, req restapi.Request) restapi.Response {
+	commitID, err := parseID(req, "id")
+	if err != nil {
+		return &restapi.BadRequest{errors.Wrap(err, "invalid id")}
+	}
+
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	commitUUID, err := repository.getCommitUUID(commitID)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	response, err := c.BuilderAPI().GetBuildReport(commitUUID)
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	return &restapi.Ok{response}
+}
+
 func getContestAssignments(ctx interface{}, req restapi.Request) restapi.Response {
 	contestID, err := parseID(req, "id")
 	if err != nil {

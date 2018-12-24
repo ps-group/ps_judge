@@ -314,6 +314,12 @@ type CommitModel struct {
 	BuildScore  int64
 }
 
+func (r *BackendRepository) getCommitUUID(commitID int64) (string, error) {
+	var uuid string
+	err := r.db.QueryRow("SELECT uuid FROM commit WHERE id = ?", commitID).Scan(&uuid)
+	return uuid, err
+}
+
 func (r *BackendRepository) createCommit(solutionID int64, uuid string) error {
 	_, err := r.query("INSERT INTO commit (solution_id, uuid) VALUES (?, ?)", solutionID, uuid)
 	return err
