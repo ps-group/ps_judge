@@ -79,6 +79,8 @@ class ViewAndCommitScenario(BackendTestScenario):
         
         solutions = self.get_user_solutions(user_id, contest_id)
         solution = self.get_solution_of_assignment(solutions, assignment_id)
+        self.check_commit_report(solutions[0]['commit_id'])
+        
         assert solution['assignment_title'] == 'A+B Problem'
 
     def login_ok(self):
@@ -141,6 +143,16 @@ class ViewAndCommitScenario(BackendTestScenario):
             assert isinstance(solution['score'], int)
             assert isinstance(solution['build_status'], str)
         return response
+
+    def check_commit_report(self, contest_id):
+        response = self.get_json('commit/{0}/report'.format(str(contest_id)))
+        assert isinstance(response['uuid'], str)
+        assert isinstance(response['status'], str)
+        assert isinstance(response['exception'], str)
+        assert isinstance(response['build_log'], str)
+        assert isinstance(response['tests_log'], str)
+        assert isinstance(response['tests_passed'], int)
+        assert isinstance(response['tests_total'], int)
 
 class CreateScenario(BackendTestScenario):
     def run(self):
