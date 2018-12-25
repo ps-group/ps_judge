@@ -60,6 +60,13 @@ import { verifyString } from '../validate.mjs';
    * @property {number} tests_total
    */
 
+   /**
+    * @typedef {Object} ContestResult
+    * @property {string} username
+    * @property {number} score
+    * @property {string} assignment_title
+    */
+
 export default class BackendApi
 {
     /**

@@ -270,12 +270,6 @@ app.get('/contest/:contestId/results', async(req, res) => {
         }
     }
 
-    //console.log(infos);
-    //console.log(assignments);
-    //console.log(students);
-
-    //console.log(results);
-
     const options = {
         'page': {
             'navbar': {
