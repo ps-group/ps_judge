@@ -246,7 +246,35 @@ app.get('/contest/:contestId/results', async(req, res) => {
     
     const results = await backendApi.getContestResults(contestId);
 
-    console.log(results);
+    const assignments = [];
+    const students = [];
+    const infos = new Object;
+
+    for (const result of results)
+    {
+        if (!infos.hasOwnProperty(result['Username']))
+        {
+            infos[result['Username']] = new Object;
+        }
+
+        infos[result['Username']][result['AssignmentTitle']] = result['Score'];
+
+        if (!assignments.includes(result['AssignmentTitle']))
+        {
+            assignments.push(result['AssignmentTitle']);
+        }
+
+        if (!students.includes(result['Username']))
+        {
+            students.push(result['Username']);
+        }
+    }
+
+    //console.log(infos);
+    //console.log(assignments);
+    //console.log(students);
+
+    //console.log(results);
 
     const options = {
         'page': {
@@ -255,7 +283,9 @@ app.get('/contest/:contestId/results', async(req, res) => {
             },
             'content': {
                 'contest': {
-                    'results' : results,
+                    'assignments': assignments,
+                    'students': students,
+                    'results' : infos,
                 }
             }
         }
