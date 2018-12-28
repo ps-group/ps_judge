@@ -1,0 +1,23 @@
+<%- include('../layout/head',  {title: 'Добавление задачи'}) %>
+<div class="wrapper">
+  <%- include('../layout/admin_navbar') %>
+  <div id="content">
+    <article>
+      <h1>Добавление задачи</h1>
+    </article>
+    <% const contest = page.content.contest %>
+    <form action="/admin/assignment" method="post">
+      <input type="hidden" name="contest_id" value="<%= contest.id %>"> 
+      <div class="form-group">
+        <label for="NewAssignmentTitle">Название (title):</label>
+        <input type="text" class="form-control" id="NewAssignmentTitle" name="title">
+      </div>
+      <div class="form-group">
+        <label for="NewAssignmentDescription">Описание (description):</label>
+        <textarea class="form-control" id="NewAssignmentDescription" name="description" cols="60" rows="10" wrap="soft"></textarea>
+      </div>
+      <button type="submit" class="btn btn-default btn-primary">Отправить</button>
+    </form>
+  </div>
+</div>
+<%- include('../layout/tail') %>

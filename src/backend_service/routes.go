@@ -23,6 +23,11 @@ var routes = restapi.RouterConfig{
 		},
 		restapi.Route{
 			"GET",
+			"/admin/contests",
+			getAdminContestList,
+		},
+		restapi.Route{
+			"GET",
 			"/user/{user_id}/contest/list",
 			getUserContestList,
 		},

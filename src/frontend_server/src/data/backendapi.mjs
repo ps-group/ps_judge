@@ -136,6 +136,14 @@ export default class BackendApi
     }
 
     /**
+     * @returns {!Promise<Array<ContestInfo>>}
+     */
+    getAdminContestList()
+    {
+        return this._client.sendGet(`admin/contests`);
+    }
+
+    /**
      * @param userId 
      * @returns {!Promise<Array<ContestInfo>>}
      */
@@ -191,10 +199,45 @@ export default class BackendApi
 
     /**
      * @param {number} contestId
+     * @returns {<Array<ContestResult>>}
      */
     async getContestResults(contestId)
     {
         contestId = verifyInt(contestId);
         return await this._client.sendGet(`contest/${contestId}/results`)
+    }
+
+    /**
+     * 
+     * @param {string} title
+     * @param {number} maxReviews 
+     */
+    async createContest(title, maxReviews)
+    {
+        const params = {
+            'title': title,
+            'max_reviews': parseInt(maxReviews),
+        };
+
+        const contestId = await this._client.sendPost('contest/create', params);
+    }
+
+    /**
+     * 
+     * @param {string} uuid 
+     * @param {string} title 
+     * @param {number} contestId 
+     * @param {string} description 
+     */
+    async createAssignment(uuid, title, contestId, description)
+    {
+        const params = {
+            'uuid': uuid,
+            'contest_id': contestId,
+            'title': title,
+            'description': description,
+        }
+
+        const assignmentId = await this._client.sendPost('assignment/create', params);
     }
 }

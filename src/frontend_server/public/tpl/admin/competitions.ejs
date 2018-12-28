@@ -1,0 +1,18 @@
+<%- include('../layout/head', {title: 'Соревнования'}) %>
+<div class="wrapper">
+  <%- include('../layout/admin_navbar') %>
+  <div id="content">
+    <% const contests = page.content.contests %>
+    <h2>Список соревнований:</h2>
+    <ul class="list-group">
+        <% for (let contest of contests) { %>
+        <li class="list-group-item">
+            <a href='/admin/contest/<%= contest.id %>'><%= contest.title %></a>
+            <a class="btn btn-danger btn-sm p-1 float-right" href="#" role="button">Удалить</a>
+        </li>
+        <% } %>
+    </ul>
+    <a class="btn btn-primary btn-sm mt-4" href="/admin/contest">Добавить соревнование</a>
+  </div>
+</div>
+<%- include('../layout/tail') %>

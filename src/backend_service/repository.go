@@ -112,6 +112,27 @@ func (r *BackendRepository) getUserInfoByUsername(username string) (*UserModel, 
 	return &user, nil
 }
 
+func (r *BackendRepository) getAdminContestList() ([]ContestModel, error) {
+	sql := "SELECT `id`, `title`, `max_reviews` FROM `contest`"
+
+	var results []ContestModel
+	rows, err := r.query(sql)
+	if err != nil {
+		return results, err
+	}
+
+	for rows.Next() {
+		var result ContestModel
+		err = rows.Scan(&result.ID, &result.Title, &result.MaxReviews)
+		if err != nil {
+			return results, errors.Wrap(err, "failed to scan SQL rows")
+		}
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
 func (r *BackendRepository) getUserContestList(userID int64) ([]ContestModel, error) {
 	sql := "SELECT `contest`.`id`, `contest`.`title`, `contest`.`max_reviews`" +
 		" FROM `contest`" +

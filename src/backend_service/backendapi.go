@@ -114,6 +114,29 @@ func getUserInfo(ctx interface{}, req restapi.Request) restapi.Response {
 	}}
 }
 
+func getAdminContestList(ctx interface{}, req restapi.Request) restapi.Response {
+	c := ctx.(*apiContext)
+	defer c.Close()
+	repository, err := c.ConnectDB()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	contests, err := repository.getAdminContestList()
+	if err != nil {
+		return &restapi.InternalError{err}
+	}
+
+	var results valuesMapList
+	for _, contest := range contests {
+		results = append(results, valuesMap{
+			"id":    contest.ID,
+			"title": contest.Title,
+		})
+	}
+	return &restapi.Ok{results}
+}
+
 func getUserContestList(ctx interface{}, req restapi.Request) restapi.Response {
 	c := ctx.(*apiContext)
 	defer c.Close()

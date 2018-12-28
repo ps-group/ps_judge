@@ -1,0 +1,21 @@
+<%- include('../layout/head',  {title: 'Добавление соревнования'}) %>
+<div class="wrapper">
+  <%- include('../layout/admin_navbar') %>
+  <div id="content">
+    <article>
+      <h1>Добавление соревнования</h1>
+    </article>
+    <form action="/admin/contest" method="post">
+      <div class="form-group">
+        <label for="NewContestTitle">Название (title):</label>
+        <input type="text" class="form-control" id="NewContestTitle" name="title">
+      </div>
+      <div class="form-group">
+        <label for="NewContestMaxReviews">Наибольшее число отзывов (max_reviews):</label>
+        <input type="text" class="form-control" id="NewContestMaxReviews" name="max_reviews">
+      </div>
+      <button type="submit" class="btn btn-default btn-primary">Отправить</button>
+    </form>
+  </div>
+</div>
+<%- include('../layout/tail') %>

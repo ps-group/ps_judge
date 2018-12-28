@@ -6,7 +6,7 @@
     <div id="content">
         <% const contest = page.content.contest %>
         <h2>Таблица результатов:</h2>
-        <table class="table">
+        <table class="table table-bordered table-hover table-sm">
             <% const assignments = page.content.contest.assignments %>
             <thead>
                 <tr>
@@ -21,7 +21,7 @@
             <tbody>
                 <% for (let student of students) { %>
                 <tr>
-                    <th scope="row"><%= student %></th>
+                    <td scope="row"><%= student %></td>
                     <% for (let assignment of assignments) { %>
                         <td><%= results[student][assignment] %></td>
                     <% } %>

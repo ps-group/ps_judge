@@ -239,10 +239,10 @@ app.get('/student/commit/:commitId', async(req, res) => {
     return res.render('tpl/student/commit.ejs', options);
 });
 
-app.get('/contest/:contestId/results', async(req, res) => {
+app.get('/contest/:id/results', async(req, res) => {
     const contests = await getUserContests(req.session.userId);
 
-    const contestId = parseInt(verifyString(req.params.contestId));
+    const contestId = parseInt(verifyString(req.params.id));
     
     const results = await backendApi.getContestResults(contestId);
 
@@ -286,6 +286,91 @@ app.get('/contest/:contestId/results', async(req, res) => {
     };
 
     return res.render('tpl/results.ejs', options);
+});
+
+app.get('/admin', (_, res) => {
+    return res.render('tpl/admin/home.ejs')
+});
+
+app.get('/admin/competitions', async(_, res) => {
+    const contests = await backendApi.getAdminContestList();
+
+    const options = {
+        'page': {
+            'content': {
+                'contests': contests,
+            }
+        }
+    };
+
+    return res.render('tpl/admin/competitions.ejs', options);
+});
+
+app.get('/admin/contest/:id', async(req, res) => {
+    const contestId = parseInt(verifyString(req.params.id));
+    const assignments = [];
+
+    for (const assignment of await backendApi.getContestAssignments(contestId))
+    {
+        assignments.push({
+            'id': verifyInt(assignment['id']),
+            'uuid': verifyString(assignment['uuid']),
+            'title': verifyString(assignment['title']),
+        });
+    }
+
+    const options = {
+        'page': {
+            'content': {
+                'contest': {
+                    'id': contestId,
+                    'assignments': assignments,
+                }
+            }
+        }
+    };
+
+    return res.render('tpl/admin/contest_assignments.ejs', options);
+});
+
+app.get('/admin/contest', (req, res) => {
+    return res.render("tpl/admin/contest_form.ejs");
+});
+
+app.post('/admin/contest', async(req, res) => {
+    const title = verifyString(req.body['title']);
+    const maxReviews = verifyString(req.body['max_reviews']);
+
+    await backendApi.createContest(title, maxReviews);
+    await res.redirect('/admin/competitions');
+});
+
+app.get('/admin/contest/:id/assignment', (req, res) => {
+    const contestId = parseInt(verifyString(req.params.id));
+
+    const options = {
+        'page': {
+            'content': {
+                'contest': {
+                    'id': contestId,
+                }
+            }
+        }
+    };
+    
+    return res.render("tpl/admin/assignment_form.ejs", options);
+});
+
+app.post('/admin/assignment', async(req, res) => {
+    const contestId = parseInt(verifyString(req.body['contest_id']));
+
+    const title = verifyString(req.body['title']);
+    const description = verifyString(req.body['description']);
+    const uuid = create_uuid();
+
+    await backendApi.createAssignment(uuid, title, contestId, description);
+
+    await res.redirect(`/admin/contest/${contestId}`);
 });
 
 const server = app.listen(config.port, (error) => {
