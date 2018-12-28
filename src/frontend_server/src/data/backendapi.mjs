@@ -60,6 +60,13 @@ import { verifyString } from '../validate.mjs';
    * @property {number} tests_total
    */
 
+   /**
+    * @typedef {Object} ContestResult
+    * @property {string} username
+    * @property {number} score
+    * @property {string} assignment_title
+    */
+
 export default class BackendApi
 {
     /**
@@ -180,5 +187,14 @@ export default class BackendApi
     {
         commitId = verifyInt(commitId);
         return await this._client.sendGet(`commit/${commitId}/report`)
+    }
+
+    /**
+     * @param {number} contestId
+     */
+    async getContestResults(contestId)
+    {
+        contestId = verifyInt(contestId);
+        return await this._client.sendGet(`contest/${contestId}/results`)
     }
 }

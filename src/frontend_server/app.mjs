@@ -239,6 +239,55 @@ app.get('/student/commit/:commitId', async(req, res) => {
     return res.render('tpl/student/commit.ejs', options);
 });
 
+app.get('/contest/:contestId/results', async(req, res) => {
+    const contests = await getUserContests(req.session.userId);
+
+    const contestId = parseInt(verifyString(req.params.contestId));
+    
+    const results = await backendApi.getContestResults(contestId);
+
+    const assignments = [];
+    const students = [];
+    const infos = new Object;
+
+    for (const result of results)
+    {
+        if (!infos.hasOwnProperty(result['Username']))
+        {
+            infos[result['Username']] = new Object;
+        }
+
+        infos[result['Username']][result['AssignmentTitle']] = result['Score'];
+
+        if (!assignments.includes(result['AssignmentTitle']))
+        {
+            assignments.push(result['AssignmentTitle']);
+        }
+
+        if (!students.includes(result['Username']))
+        {
+            students.push(result['Username']);
+        }
+    }
+
+    const options = {
+        'page': {
+            'navbar': {
+                'contests': contests,
+            },
+            'content': {
+                'contest': {
+                    'assignments': assignments,
+                    'students': students,
+                    'results' : infos,
+                }
+            }
+        }
+    };
+
+    return res.render('tpl/results.ejs', options);
+});
+
 const server = app.listen(config.port, (error) => {
     if (error) return console.log(`Error: ${error}`);
 

@@ -79,6 +79,10 @@ class ViewAndCommitScenario(BackendTestScenario):
         
         solutions = self.get_user_solutions(user_id, contest_id)
         solution = self.get_solution_of_assignment(solutions, assignment_id)
+<<<<<<< HEAD
+=======
+
+>>>>>>> PSJ-8
         self.check_commit_report(solutions[0]['commit_id'])
         
         assert solution['assignment_title'] == 'A+B Problem'

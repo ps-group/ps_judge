@@ -171,6 +171,33 @@ func (r *BackendRepository) getUserContestSolutions(userID int64, contestID int6
 	return results, nil
 }
 
+type SolutionInfoModel struct {
+	Username		string
+	Score 			int64
+	AssignmentTitle	string
+}
+
+func (r *BackendRepository) getContestResults(contestID int64) ([]SolutionInfoModel, error) {
+	var results []SolutionInfoModel
+
+	rows, err := r.query("SELECT `user`.`username`, `solution`.`score`, `assignment`.`title` FROM `solution` " + 
+						"LEFT JOIN `assignment` ON `solution`.`assignment_id` = `assignment`.`id` " + 
+						"LEFT JOIN `user` ON `user`.`id` = `solution`.`user_id` WHERE `assignment`.`contest_id` = ?", contestID)
+	if err != nil {
+		return results, err
+	}
+
+	for rows.Next() {
+		var result SolutionInfoModel
+		err = rows.Scan(&result.Username, &result.Score, &result.AssignmentTitle)
+		if err != nil {
+			return results, errors.Wrap(err, "failed to scan SQL rows")
+		}
+		results = append(results, result)
+	}
+	return results, nil
+}
+
 // SolutionModel - models solution in database
 type SolutionModel struct {
 	ID           int64

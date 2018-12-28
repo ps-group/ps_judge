@@ -1,0 +1,38 @@
+<%- include('layout/head', {title: 'Результаты'}) %>
+<!-- Handsontable styles (SOON) -->
+<!-- <link href="/css/handsontable.full.min.css" rel="stylesheet" media="screen"> -->
+<div class="wrapper">
+    <%- include('layout/student_navbar') %>
+    <div id="content">
+        <% const contest = page.content.contest %>
+        <h2>Таблица результатов:</h2>
+        <table class="table">
+            <% const assignments = page.content.contest.assignments %>
+            <thead>
+                <tr>
+                    <th></th>
+                    <% for (let assignment of assignments) { %>
+                    <th scope="col"><%= assignment %></th>
+                    <% } %>
+                </tr>
+            </thead>
+            <% const students = page.content.contest.students %>
+            <% const results = page.content.contest.results %>
+            <tbody>
+                <% for (let student of students) { %>
+                <tr>
+                    <th scope="row"><%= student %></th>
+                    <% for (let assignment of assignments) { %>
+                        <td><%= results[student][assignment] %></td>
+                    <% } %>
+                </tr>
+                <% } %>
+            </tbody>
+        <!-- Handson table (SOON)
+        <div id="ResultsTable"></div> --> 
+    </div>
+</div>
+<!-- Handsonetable files (SOON) -->
+<!-- <script src="/js/handsontable.full.min.js"></script>
+<script src="/js/resultsTable.js"></script>-->
+<%- include('layout/tail') %>

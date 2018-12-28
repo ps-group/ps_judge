@@ -32,6 +32,11 @@ var routes = restapi.RouterConfig{
 			getUserContestSolutions,
 		},
 		restapi.Route{
+			"GET",
+			"/contest/{id}/results",
+			getContestResults,
+		},
+		restapi.Route{
 			"POST",
 			"/user/{id}/commit",
 			commitSolution,
