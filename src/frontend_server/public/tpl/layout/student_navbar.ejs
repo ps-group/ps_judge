@@ -1,0 +1,18 @@
+<!-- Sidebar -->
+<nav id="sidebar">
+    <div class="sidebar-header">
+        <a href="/">PS.Judge</a>
+    </div>
+    <ul class="list-unstyled components">
+        <% for (let contest of page.navbar.contests) { %>
+        <li>
+            <a href="#contestList<%= contest.id %>" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle collapsed"><%= contest.title %></a>
+            <ul class="list-unstyled collapse" id="contestList<%= contest.id %>" style>
+                <li><a href="/contest/<%= contest.id %>/assignments">Задания</a></li>
+                <li><a href="/student/contest/<%= contest.id %>/solutions">Решения</a></li>
+                <li><a href="/student/contest/<%= contest.id %>/results">Результаты</a></li>
+            </ul>
+        </li>
+        <% } %>
+    </ul>      
+</nav>

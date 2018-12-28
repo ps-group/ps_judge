@@ -18,11 +18,17 @@ import { verifyString } from '../validate.mjs';
  */
 
 /**
+ * @typedef {Object} ContestInfo
+ * @property {number} id
+ * @property {string} title
+ */
+
+/**
  * @typedef {Object} BriefSolutionInfo
  * @property {number} assignment_id
  * @property {string} assignment_title
- * @property {number} commit_id
  * @property {number} score
+ * @property {number} commit_id
  * @property {string} build_status
  */
 
@@ -42,6 +48,17 @@ import { verifyString } from '../validate.mjs';
   * @property {string} title
   * @property {string} description
   */
+
+  /**
+   * @typedef {Object} CommitReport
+   * @property {string} uuid
+   * @property {string} status
+   * @property {string} exception
+   * @property {string} build_log
+   * @property {string} tests_log
+   * @property {number} tests_passed
+   * @property {number} tests_total
+   */
 
 export default class BackendApi
 {
@@ -112,6 +129,28 @@ export default class BackendApi
     }
 
     /**
+     * @param userId 
+     * @returns {!Promise<Array<ContestInfo>>}
+     */
+    getUserContestList(userId)
+    {
+        userId = verifyInt(userId);
+        return this._client.sendGet(`user/${userId}/contest/list`);
+    }
+
+    /**
+     * @param {number} userId
+     * @param {number} contestId 
+     * @returns {!Promise<Array<BriefSolutionInfo>>}
+     */
+    getUserContestSolutions(userId, contestId)
+    {
+        userId = verifyInt(userId);
+        contestId = verifyInt(contestId);
+        return  this._client.sendGet(`user/${userId}/contest/${contestId}/solutions`)
+    }
+
+    /**
      * Queries list of assignments for the given contest.
      * @param {number} contestId
      * @returns {Array<AssignmentInfo>} list of assignments
@@ -131,5 +170,15 @@ export default class BackendApi
     {
         assignmentId = verifyInt(assignmentId);
         return await this._client.sendGet(`assignment/${assignmentId}`);
+    }
+
+    /**
+     * @param {number} commitId
+     * @returns {CommitReport}
+     */
+    async getCommitReport(commitId)
+    {
+        commitId = verifyInt(commitId);
+        return await this._client.sendGet(`commit/${commitId}/report`)
     }
 }

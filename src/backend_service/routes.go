@@ -23,13 +23,23 @@ var routes = restapi.RouterConfig{
 		},
 		restapi.Route{
 			"GET",
-			"/user/{id}/solutions",
-			getUserSolutions,
+			"/user/{user_id}/contest/list",
+			getUserContestList,
+		},
+		restapi.Route{
+			"GET",
+			"/user/{user_id}/contest/{contest_id}/solutions",
+			getUserContestSolutions,
 		},
 		restapi.Route{
 			"POST",
 			"/user/{id}/commit",
 			commitSolution,
+		},
+		restapi.Route{
+			"GET",
+			"/commit/{id}/report",
+			getCommitReport,
 		},
 		restapi.Route{
 			"GET",

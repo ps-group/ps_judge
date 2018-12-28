@@ -1,11 +1,14 @@
 <%- include('layout/head', {title: 'Задачи'}) %>
-<div class="container">
+<div class="wrapper">
   <%- include('layout/student_navbar') %>
-  <h2>Список заданий</h2>
-  <ol>
-  <% for (let assignment of page.assignments) { %>
-    <li><a href='/student/assignment?id=<%= assignment.id %>'><%= assignment.title %></a></li>
-  <% } %>
-  </ol>
+  <!-- Content -->
+  <div id="content">
+    <h1>Список заданий</h1>
+    <ol>
+    <% for (let assignment of page.assignments) { %>
+      <li><a href='/student/assignment?id=<%= assignment.id %>'><%= assignment.title %></a></li>
+    <% } %>
+    </ol>
+  </div>
 </div>
 <%- include('layout/tail') %>

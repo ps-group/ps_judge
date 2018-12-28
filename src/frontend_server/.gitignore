@@ -71,3 +71,6 @@ typings/
 
 # Frontend config file
 frontend_server.json
+
+# Dockerfile
+Dockerfile

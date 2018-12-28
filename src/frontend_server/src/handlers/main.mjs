@@ -4,6 +4,27 @@ import { ADMIN_HOME_URL, JUDGE_HOME_URL, STUDENT_HOME_URL } from '../routes';
 import { hashPassword } from '../data/password.mjs';
 import { verifyInt, verifyString, verifyArray } from '../validate.mjs';
 
+export function redirectAuthorized(req, res) 
+{
+    const roles = req.session.roles;
+    if (roles.indexOf(ROLE_ADMIN) >= 0)
+    {
+        return res.redirect("/admin");
+    }
+    else if (roles.indexOf(ROLE_JUDGE) >= 0)
+    {
+        return res.redirect("/judge");
+    }
+    else if (roles.indexOf(ROLE_STUDENT) >= 0)
+    {
+        return res.redirect("/student");
+    }
+    else
+    {
+        throw new Error('user has incorrect roles: ' + roles);
+    }
+}
+
 export default class MainHandler extends BaseHandler
 {
     /**

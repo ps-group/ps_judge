@@ -1,14 +1,16 @@
-<%- include('layout/head', {title: page.title}) %>
+<% const assignment = page.content.assignment %>
+<%- include('../layout/head', {title: assignment.title}) %>
 <div class="wrapper">
-  <%- include('layout/student_navbar') %>
+  <%- include('../layout/student_navbar') %>
   <div id="content">
     <article>
-      <h1><%= page.title %></h1>
-      <%- page.assignment_info %>
+      <h1><%= assignment.title %></h1>
+      <%- assignment.info %>
     </article>
     <h2>Отправка решения на проверку</h2>
     <form action="/student/commit" method="post">
-      <input type="hidden" name="assignmentId" value="<%= page.assignment_id %>">
+      <input type="hidden" name="contestId" value="<%= page.content.contestId %>">
+      <input type="hidden" name="assignmentId" value="<%= assignment.id %>">
       <div class="alert alert-info" role="alert">
         <span>Как только составите решение, скопируйте его исходный код, укажите язык и нажмите "Отправить"</span>
       </div>
@@ -28,4 +30,4 @@
     </form>
   </div>
 </div>
-<%- include('layout/tail') %>
+<%- include('../layout/tail') %>

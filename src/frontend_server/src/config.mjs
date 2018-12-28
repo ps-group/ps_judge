@@ -1,5 +1,4 @@
-import { readFile } from 'fs';
-import { promisify } from 'util';
+import { readFileSync } from 'fs';
 
 export class Config
 {
@@ -13,10 +12,9 @@ export class Config
 /**
  * @param {string} path 
  */
-export async function readConfig(path)
+export function readConfig(path)
 {
-    const readFileAsync = promisify(readFile);
-    const jsonText = await readFileAsync(path);
+    const jsonText = readFileSync(path);
     const jsonObject = JSON.parse(jsonText);
 
     return new Config(jsonObject);
